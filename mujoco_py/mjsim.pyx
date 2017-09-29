@@ -71,18 +71,12 @@ cdef class MjSim(object):
     cdef mjrContext _con
 
     # Public wrappers
-    cdef readonly PyMjvScene scn
-    cdef readonly PyMjvCamera cam
-    cdef readonly PyMjvOption vopt
-    cdef readonly PyMjvPerturb pert
-    cdef readonly PyMjrContext con
 
     cdef readonly object opengl_context
     cdef readonly int _visible
     cdef readonly list _markers
     cdef readonly dict _overlay
 
-    cdef readonly bint offscreen
     cdef public object sim
     #####################################
 
@@ -245,10 +239,7 @@ cdef class MjSim(object):
                 mjv_defaultOption(&self._vopt)
                 mjr_defaultContext(&self._con)
 
-                # self.sim = sim
-                # self._setup_opengl_context(offscreen=False, device_id=device_id)
                 # self.opengl_context = GlfwContext(offscreen=False) # TODO: ?
-                self.offscreen = False
 
                 # Ensure the model data has been updated so that there
                 # is something to render
@@ -258,30 +249,24 @@ cdef class MjSim(object):
 
                 self._model_ptr = self.model.ptr
                 self._data_ptr = self.data.ptr
-                self.scn = WrapMjvScene(&self._scn)
-                self.cam = WrapMjvCamera(&self._cam)
-                self.vopt = WrapMjvOption(&self._vopt)
-                self.con = WrapMjrContext(&self._con)
                 self._pert.active = 0
                 self._pert.select = 0
-                self.pert = WrapMjvPerturb(&self._pert)
 
                 self._markers = []
                 self._overlay = {}
 
                 # self._init_camera(self)
-                self.cam.type = const.CAMERA_FREE
-                self.cam.fixedcamid = -1
+                self._cam.type = const.CAMERA_FREE
+                self._cam.fixedcamid = -1
                 for i in range(3):
-                    self.cam.lookat[i] = self.model.stat.center[i]
-                self.cam.distance = self.model.stat.extent
+                    self._cam.lookat[i] = self.model.stat.center[i]
+                self._cam.distance = self.model.stat.extent
 
                 # self._set_mujoco_buffers()
                 mjr_makeContext(self._model_ptr, &self._con, mjFONTSCALE_150)
                 mjr_setBuffer(mjFB_WINDOW, &self._con);
                 if self._con.currentBuffer != mjFB_WINDOW:
                     raise RuntimeError('Window rendering not supported')
-                self.con = WrapMjrContext(&self._con)
 
             else:
                 render_context = self._render_context_window
@@ -294,10 +279,10 @@ cdef class MjSim(object):
 
             if camera_id is not None:
                 if camera_id == -1:
-                    self.cam.type = const.CAMERA_FREE
+                    self._cam.type = const.CAMERA_FREE
                 else:
-                    self.cam.type = const.CAMERA_FIXED
-                self.cam.fixedcamid = camera_id
+                    self._cam.type = const.CAMERA_FIXED
+                self._cam.fixedcamid = camera_id
 
             self.opengl_context.set_buffer_size(width, height)
 
