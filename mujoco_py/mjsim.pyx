@@ -227,10 +227,6 @@ cdef class MjSim(object):
                     mjr_setBuffer(mjFB_OFFSCREEN, &self._con);
                     if self._con.currentBuffer != mjFB_OFFSCREEN:
                         raise RuntimeError('Offscreen rendering not supported')
-                    render_context = self
-
-                else:
-                    render_context = self._render_context_offscreen
 
                 # render_context.render(
                     # width=width, height=height, camera_id=camera_id)
@@ -255,12 +251,7 @@ cdef class MjSim(object):
                             if self._con.currentBuffer != mjFB_WINDOW:
                                 raise RuntimeError('Window rendering not supported')
 
-                if camera_id is not None:
-                    if camera_id == -1:
-                        self.cam.type = const.CAMERA_FREE
-                    else:
-                        self.cam.type = const.CAMERA_FIXED
-                    self.cam.fixedcamid = camera_id
+                self._cam.type = const.CAMERA_FREE
 
                 self.opengl_context.set_buffer_size(width, height)
 
