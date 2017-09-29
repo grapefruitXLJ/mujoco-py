@@ -56,5 +56,6 @@ while True:
     t += 1
     sim.step()
     viewer.render()
+
     if t > 100 and os.getenv('TESTING') is not None:
         break
