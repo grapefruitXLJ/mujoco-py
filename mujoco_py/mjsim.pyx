@@ -58,7 +58,6 @@ cdef class MjSim(object):
     cdef mjrContext _con
 
     # Public wrappers
-    cdef          PyMjvCamera cam
 
     cdef          object opengl_context
     cdef          int _visible
@@ -117,7 +116,6 @@ cdef class MjSim(object):
 
         # sim.add_render_context(self)
 
-        self.cam = WrapMjvCamera(&self._cam)
         self._pert.active = 0
         self._pert.select = 0
 
@@ -205,9 +203,10 @@ cdef class MjSim(object):
                     device_id = 0 # int(os.getenv('CUDA_VISIBLE_DEVICES', '0').split(',')[0])
                     self.opengl_context = OffscreenOpenGLContext(device_id)
                     self.offscreen = True
-                    self.forward()
+
+                    # self.forward()
+                    mj_forward(self.model.ptr, self.data.ptr)
                     self._render_context_offscreen = self
-                    self.cam = WrapMjvCamera(&self._cam)
                     self._pert.active = 0
                     self._pert.select = 0
 
@@ -215,11 +214,11 @@ cdef class MjSim(object):
                     self._overlay = {}
 
                     # self._init_camera(self)
-                    self.cam.type = const.CAMERA_FREE
-                    self.cam.fixedcamid = -1
+                    self._cam.type = const.CAMERA_FREE
+                    self._cam.fixedcamid = -1
                     for i in range(3):
-                        self.cam.lookat[i] = self.model.stat.center[i]
-                    self.cam.distance = self.model.stat.extent
+                        self._cam.lookat[i] = self.model.stat.center[i]
+                    self._cam.distance = self.model.stat.extent
 
                     # self._set_mujoco_buffers()
                     mjr_makeContext(self.model.ptr, &self._con, mjFONTSCALE_150)
@@ -228,29 +227,6 @@ cdef class MjSim(object):
                     if self._con.currentBuffer != mjFB_OFFSCREEN:
                         raise RuntimeError('Offscreen rendering not supported')
 
-                # render_context.render(
-                    # width=width, height=height, camera_id=camera_id)
-                if width > self._con.offWidth or height > self._con.offHeight:
-                    new_width = max(width, self.model.ptr.vis.global_.offwidth)
-                    new_height = max(height, self.model.ptr.vis.global_.offheight)
-
-                    # self.update_offscreen_size(new_width, new_height)
-                    if width != self._con.offWidth or height != self._con.offHeight:
-                        self.model.ptr.vis.global_.offwidth = width
-                        self.model.ptr.vis.global_.offheight = height
-                        mjr_freeContext(&self._con)
-
-                        # self._set_mujoco_buffers()
-                        mjr_makeContext(self.model.ptr, &self._con, mjFONTSCALE_150)
-                        if self.offscreen:
-                            mjr_setBuffer(mjFB_OFFSCREEN, &self._con);
-                            if self._con.currentBuffer != mjFB_OFFSCREEN:
-                                raise RuntimeError('Offscreen rendering not supported')
-                        else:
-                            mjr_setBuffer(mjFB_WINDOW, &self._con);
-                            if self._con.currentBuffer != mjFB_WINDOW:
-                                raise RuntimeError('Window rendering not supported')
-
                 self._cam.type = const.CAMERA_FREE
 
                 self.opengl_context.set_buffer_size(width, height)
@@ -258,27 +234,18 @@ cdef class MjSim(object):
                 mjv_updateScene(self.model.ptr, self.data.ptr, &self._vopt,
                                 &self._pert, &self._cam, mjCAT_ALL, &self._scn)
 
-                for marker_params in self._markers:
-                    self._add_marker_to_scene(marker_params)
-
                 mjr_render(rect, &self._scn, &self._con)
-                for gridpos, (text1, text2) in self._overlay.items():
-                    mjr_overlay(const.FONTSCALE_150, gridpos, rect, text1.encode(), text2.encode(), &self._con)
 
                 # return render_context.read_pixels(width, height, depth=depth)
                 mjr_readPixels(&rgb_view[0], &depth_view[0], rect, &self._con)
-                rgb_img = rgb_arr.reshape(rect.height, rect.width, 3)
-                if depth:
-                    depth_img = depth_arr.reshape(rect.height, rect.width)
-                    return (rgb_img, depth_img)
-                else:
-                    return rgb_img
+                # return rgb_arr.reshape(rect.height, rect.width, 3)
+                # return rgb_img
 
 
         elif mode == 'window':
             if self._render_context_window is None:
-                from mujoco_py.mjviewer import MjViewer
-                render_context = MjViewer(self)
+                from mujoco_py.builder import cymj
+                render_context = cymj.MjRenderContextWindow(self)
             else:
                 render_context = self._render_context_window
 
