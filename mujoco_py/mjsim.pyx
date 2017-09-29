@@ -50,21 +50,17 @@ cdef class MjSim(object):
     cdef readonly dict extras
 
     ### MjRenderContext
-
-    cdef mjvScene _scn
-    cdef mjvCamera _cam
-    cdef mjvOption _vopt
-    cdef mjvPerturb _pert
-    cdef mjrContext _con
+    cdef mjvScene _offscreen_scn
+    cdef mjvCamera _offscreen_cam
+    cdef mjvOption _offscreen_vopt
+    cdef mjvPerturb _offscreen_pert
+    cdef mjrContext _offscreen_con
 
     # Public wrappers
 
     cdef          object opengl_context
     cdef          int _visible
-    cdef          list _markers
-    cdef          dict _overlay
 
-    cdef          bint offscreen
     # cdef public object sim
 
     def __cinit__(self, PyMjModel model, PyMjData data=None, int nsubsteps=1,
@@ -89,38 +85,17 @@ cdef class MjSim(object):
 
         ### MjRenderContext
         maxgeom = 1000
-        mjv_makeScene(&self._scn, maxgeom)
-        mjv_defaultCamera(&self._cam)
-        mjv_defaultOption(&self._vopt)
-        mjr_defaultContext(&self._con)
+        mjv_makeScene(&self._offscreen_scn, maxgeom)
+        mjv_defaultCamera(&self._offscreen_cam)
+        mjv_defaultOption(&self._offscreen_vopt)
+        mjr_defaultContext(&self._offscreen_con)
 
         ### MjRenderContext
-        # def __init__(self, MjSim sim, bint offscreen=True, int device_id=-1):
-        # self.sim = sim
-        # self._setup_opengl_context(offscreen, device_id)
-        # if not offscreen or sys.platform == 'darwin':
-            # self.opengl_context = GlfwContext(offscreen=offscreen)
-        # else:
-            # if device_id < 0:
-                # if "GPUS" in os.environ:
-                    # device_id = int(os.environ["GPUS"].split(',')[0])
-                # else:
-                    # device_id = int(os.getenv('CUDA_VISIBLE_DEVICES', '0').split(',')[0])
-            # self.opengl_context = OffscreenOpenGLContext(device_id)
-
-        # self.offscreen = offscreen
-
-        # Ensure the model data has been updated so that there
-        # is something to render
         self.forward()
 
-        # sim.add_render_context(self)
+        self._offscreen_pert.active = 0
+        self._offscreen_pert.select = 0
 
-        self._pert.active = 0
-        self._pert.select = 0
-
-        self._markers = []
-        self._overlay = {}
 
     def reset(self):
         """
@@ -195,51 +170,42 @@ cdef class MjSim(object):
             with _MjSim_render_lock:
                 if self._render_context_offscreen is None:
                     maxgeom = 1000
-                    mjv_makeScene(&self._scn, maxgeom)
-                    mjv_defaultCamera(&self._cam)
-                    mjv_defaultOption(&self._vopt)
-                    mjr_defaultContext(&self._con)
+                    mjv_makeScene(&self._offscreen_scn, maxgeom)
+                    mjv_defaultCamera(&self._offscreen_cam)
+                    mjv_defaultOption(&self._offscreen_vopt)
+                    mjr_defaultContext(&self._offscreen_con)
 
                     device_id = 0 # int(os.getenv('CUDA_VISIBLE_DEVICES', '0').split(',')[0])
-                    self.opengl_context = OffscreenOpenGLContext(device_id)
-                    self.offscreen = True
+                    self.opengl_context = OffscreenOpenGLContext(device_id) # TODO
 
-                    # self.forward()
                     mj_forward(self.model.ptr, self.data.ptr)
                     self._render_context_offscreen = self
-                    self._pert.active = 0
-                    self._pert.select = 0
+                    self._offscreen_pert.active = 0
+                    self._offscreen_pert.select = 0
 
                     self._markers = []
-                    self._overlay = {}
 
-                    # self._init_camera(self)
-                    self._cam.type = const.CAMERA_FREE
-                    self._cam.fixedcamid = -1
+                    self._offscreen_cam.type = const.CAMERA_FREE
+                    self._offscreen_cam.fixedcamid = -1
                     for i in range(3):
-                        self._cam.lookat[i] = self.model.stat.center[i]
-                    self._cam.distance = self.model.stat.extent
+                        self._offscreen_cam.lookat[i] = self.model.stat.center[i]
+                    self._offscreen_cam.distance = self.model.stat.extent
 
-                    # self._set_mujoco_buffers()
-                    mjr_makeContext(self.model.ptr, &self._con, mjFONTSCALE_150)
-                    # if self.offscreen:
-                    mjr_setBuffer(mjFB_OFFSCREEN, &self._con);
-                    if self._con.currentBuffer != mjFB_OFFSCREEN:
+                    mjr_makeContext(self.model.ptr, &self._offscreen_con, mjFONTSCALE_150)
+                    mjr_setBuffer(mjFB_OFFSCREEN, &self._offscreen_con);
+                    if self._offscreen_con.currentBuffer != mjFB_OFFSCREEN:
                         raise RuntimeError('Offscreen rendering not supported')
 
-                self._cam.type = const.CAMERA_FREE
+                self._offscreen_cam.type = const.CAMERA_FREE
 
-                self.opengl_context.set_buffer_size(width, height)
+                self.opengl_context.set_buffer_size(width, height)  # TODO
 
-                mjv_updateScene(self.model.ptr, self.data.ptr, &self._vopt,
-                                &self._pert, &self._cam, mjCAT_ALL, &self._scn)
+                mjv_updateScene(self.model.ptr, self.data.ptr, &self._offscreen_vopt,
+                                &self._offscreen_pert, &self._offscreen_cam, mjCAT_ALL, &self._offscreen_scn)
 
-                mjr_render(rect, &self._scn, &self._con)
+                mjr_render(rect, &self._offscreen_scn, &self._offscreen_con)
 
-                # return render_context.read_pixels(width, height, depth=depth)
-                mjr_readPixels(&rgb_view[0], &depth_view[0], rect, &self._con)
-                # return rgb_arr.reshape(rect.height, rect.width, 3)
-                # return rgb_img
+                mjr_readPixels(&rgb_view[0], &depth_view[0], rect, &self._offscreen_con)
 
 
         elif mode == 'window':
