@@ -201,7 +201,7 @@ cdef class MjSim(object):
                     mjr_defaultContext(&self._offscreen_con)
 
                     device_id = 0 # int(os.getenv('CUDA_VISIBLE_DEVICES', '0').split(',')[0])
-                    self.opengl_context_offscreen = OffscreenOpenGLContext(device_id) # TODO
+                    # self.opengl_context_offscreen = OffscreenOpenGLContext(device_id) # TODO
 
                     mj_forward(self.model.ptr, self.data.ptr)
                     self._render_context_offscreen = self
@@ -246,7 +246,8 @@ cdef class MjSim(object):
                 mjr_defaultContext(&self._con)
 
                 # self.sim = sim
-                self._setup_opengl_context(offscreen=False, device_id=device_id)
+                # self._setup_opengl_context(offscreen=False, device_id=device_id)
+                # self.opengl_context = GlfwContext(offscreen=False) # TODO: ?
                 self.offscreen = False
 
                 # Ensure the model data has been updated so that there
@@ -268,8 +269,19 @@ cdef class MjSim(object):
                 self._markers = []
                 self._overlay = {}
 
-                self._init_camera(self)
-                self._set_mujoco_buffers()
+                # self._init_camera(self)
+                self.cam.type = const.CAMERA_FREE
+                self.cam.fixedcamid = -1
+                for i in range(3):
+                    self.cam.lookat[i] = self.model.stat.center[i]
+                self.cam.distance = self.model.stat.extent
+
+                # self._set_mujoco_buffers()
+                mjr_makeContext(self._model_ptr, &self._con, mjFONTSCALE_150)
+                mjr_setBuffer(mjFB_WINDOW, &self._con);
+                if self._con.currentBuffer != mjFB_WINDOW:
+                    raise RuntimeError('Window rendering not supported')
+                self.con = WrapMjrContext(&self._con)
 
             else:
                 render_context = self._render_context_window
