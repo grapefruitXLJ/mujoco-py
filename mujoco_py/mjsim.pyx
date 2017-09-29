@@ -57,9 +57,34 @@ cdef class MjSim(object):
     cdef mjrContext _offscreen_con
 
     # Public wrappers
+    cdef          object opengl_context_offscreen
 
-    cdef          object opengl_context
-    cdef          int _visible
+    #####################################
+    ### MjRenderContextWindow
+    cdef mjModel *_model_ptr
+    cdef mjData *_data_ptr
+
+    cdef mjvScene _scn
+    cdef mjvCamera _cam
+    cdef mjvOption _vopt
+    cdef mjvPerturb _pert
+    cdef mjrContext _con
+
+    # Public wrappers
+    cdef readonly PyMjvScene scn
+    cdef readonly PyMjvCamera cam
+    cdef readonly PyMjvOption vopt
+    cdef readonly PyMjvPerturb pert
+    cdef readonly PyMjrContext con
+
+    cdef readonly object opengl_context
+    cdef readonly int _visible
+    cdef readonly list _markers
+    cdef readonly dict _overlay
+
+    cdef readonly bint offscreen
+    cdef public object sim
+    #####################################
 
     # cdef public object sim
 
@@ -176,7 +201,7 @@ cdef class MjSim(object):
                     mjr_defaultContext(&self._offscreen_con)
 
                     device_id = 0 # int(os.getenv('CUDA_VISIBLE_DEVICES', '0').split(',')[0])
-                    self.opengl_context = OffscreenOpenGLContext(device_id) # TODO
+                    self.opengl_context_offscreen = OffscreenOpenGLContext(device_id) # TODO
 
                     mj_forward(self.model.ptr, self.data.ptr)
                     self._render_context_offscreen = self
@@ -198,7 +223,7 @@ cdef class MjSim(object):
 
                 self._offscreen_cam.type = const.CAMERA_FREE
 
-                self.opengl_context.set_buffer_size(width, height)  # TODO
+                self.opengl_context_offscreen.set_buffer_size(width, height)  # TODO
 
                 mjv_updateScene(self.model.ptr, self.data.ptr, &self._offscreen_vopt,
                                 &self._offscreen_pert, &self._offscreen_cam, mjCAT_ALL, &self._offscreen_scn)
@@ -210,15 +235,72 @@ cdef class MjSim(object):
 
         elif mode == 'window':
             if self._render_context_window is None:
+                self._render_context_window = self
                 from mujoco_py.builder import cymj
-                render_context = cymj.MjRenderContextWindow(self)
+
+                # render_context = cymj.MjRenderContextWindow(self)
+                maxgeom = 1000
+                mjv_makeScene(&self._scn, maxgeom)
+                mjv_defaultCamera(&self._cam)
+                mjv_defaultOption(&self._vopt)
+                mjr_defaultContext(&self._con)
+
+                # self.sim = sim
+                self._setup_opengl_context(offscreen=False, device_id=device_id)
+                self.offscreen = False
+
+                # Ensure the model data has been updated so that there
+                # is something to render
+                mj_forward(self.model.ptr, self.data.ptr)
+
+                self.add_render_context(self)
+
+                self._model_ptr = self.model.ptr
+                self._data_ptr = self.data.ptr
+                self.scn = WrapMjvScene(&self._scn)
+                self.cam = WrapMjvCamera(&self._cam)
+                self.vopt = WrapMjvOption(&self._vopt)
+                self.con = WrapMjrContext(&self._con)
+                self._pert.active = 0
+                self._pert.select = 0
+                self.pert = WrapMjvPerturb(&self._pert)
+
+                self._markers = []
+                self._overlay = {}
+
+                self._init_camera(self)
+                self._set_mujoco_buffers()
+
             else:
                 render_context = self._render_context_window
 
-            render_context.render()
+            # render_context.render()
+            if width > self._con.offWidth or height > self._con.offHeight:
+                new_width = max(width, self._model_ptr.vis.global_.offwidth)
+                new_height = max(height, self._model_ptr.vis.global_.offheight)
+                self.update_offscreen_size(new_width, new_height)
 
-        else:
-            raise ValueError("Mode must be either 'window' or 'offscreen'.")
+            if camera_id is not None:
+                if camera_id == -1:
+                    self.cam.type = const.CAMERA_FREE
+                else:
+                    self.cam.type = const.CAMERA_FIXED
+                self.cam.fixedcamid = camera_id
+
+            self.opengl_context.set_buffer_size(width, height)
+
+            mjv_updateScene(self._model_ptr, self._data_ptr, &self._vopt,
+                            &self._pert, &self._cam, mjCAT_ALL, &self._scn)
+
+            for marker_params in self._markers:
+                self._add_marker_to_scene(marker_params)
+
+            mjr_render(rect, &self._scn, &self._con)
+            for gridpos, (text1, text2) in self._overlay.items():
+                mjr_overlay(const.FONTSCALE_150, gridpos, rect, text1.encode(), text2.encode(), &self._con)
+
+            else:
+                raise ValueError("Mode must be either 'window' or 'offscreen'.")
 
     def render(self, width=None, height=None, *, camera_name=None, depth=False,
                mode='offscreen', device_id=-1):
