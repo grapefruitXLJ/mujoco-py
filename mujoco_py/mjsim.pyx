@@ -74,7 +74,6 @@ cdef class MjSim(object):
 
     cdef readonly object opengl_context
     cdef readonly int _visible
-    cdef readonly list _markers
     cdef readonly dict _overlay
 
     cdef public object sim
@@ -202,8 +201,6 @@ cdef class MjSim(object):
                     self._offscreen_pert.active = 0
                     self._offscreen_pert.select = 0
 
-                    self._markers = []
-
                     self._offscreen_cam.type = const.CAMERA_FREE
                     self._offscreen_cam.fixedcamid = -1
                     for i in range(3):
@@ -259,7 +256,6 @@ cdef class MjSim(object):
                 self._pert.active = 0
                 self._pert.select = 0
 
-                self._markers = []
                 self._overlay = {}
 
                 # self._init_camera(self)
@@ -295,9 +291,6 @@ cdef class MjSim(object):
 
             mjv_updateScene(self._model_ptr, self._data_ptr, &self._vopt,
                             &self._pert, &self._cam, mjCAT_ALL, &self._scn)
-
-            for marker_params in self._markers:
-                self._add_marker_to_scene(marker_params)
 
             mjr_render(rect, &self._scn, &self._con)
             for gridpos, (text1, text2) in self._overlay.items():
