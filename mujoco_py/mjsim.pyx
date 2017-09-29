@@ -195,7 +195,7 @@ cdef class MjSim(object):
                     mjr_defaultContext(&self._offscreen_con)
 
                     device_id = 0 # int(os.getenv('CUDA_VISIBLE_DEVICES', '0').split(',')[0])
-                    # self.opengl_context_offscreen = OffscreenOpenGLContext(device_id) # TODO
+                    self.opengl_context_offscreen = OffscreenOpenGLContext(device_id) # TODO
 
                     mj_forward(self.model.ptr, self.data.ptr)
                     self._render_context_offscreen = self
@@ -226,6 +226,13 @@ cdef class MjSim(object):
 
                 mjr_readPixels(&rgb_view[0], &depth_view[0], rect, &self._offscreen_con)
 
+                rgb_img = rgb_arr.reshape(rect.height, rect.width, 3)
+                if depth:
+                    depth_img = depth_arr.reshape(rect.height, rect.width)
+                    return (rgb_img, depth_img)
+                else:
+                    return rgb_img
+
 
         elif mode == 'window':
             if self._render_context_window is None:
@@ -239,7 +246,7 @@ cdef class MjSim(object):
                 mjv_defaultOption(&self._vopt)
                 mjr_defaultContext(&self._con)
 
-                # self.opengl_context = GlfwContext(offscreen=False) # TODO: ?
+                self.opengl_context = GlfwContext(offscreen=False) # TODO: ?
 
                 # Ensure the model data has been updated so that there
                 # is something to render
