@@ -187,6 +187,7 @@ cdef class MjSim(object):
         if mode == 'offscreen':
             with _MjSim_render_lock:
                 if self._render_context_offscreen is None:
+
                     maxgeom = 1000
                     mjv_makeScene(&self._offscreen_scn, maxgeom)
                     mjv_defaultCamera(&self._offscreen_cam)
@@ -212,6 +213,10 @@ cdef class MjSim(object):
                     if self._offscreen_con.currentBuffer != mjFB_OFFSCREEN:
                         raise RuntimeError('Offscreen rendering not supported')
 
+                # mjr_defaultContext(&self._offscreen_con)
+                mjr_makeContext(self.model.ptr, &self._offscreen_con, mjFONTSCALE_150)
+                mjr_setBuffer(mjFB_OFFSCREEN, &self._offscreen_con);
+
                 self._offscreen_cam.type = const.CAMERA_FREE
 
                 self.opengl_context_offscreen.set_buffer_size(width, height)  # TODO
@@ -219,16 +224,21 @@ cdef class MjSim(object):
                 mjv_updateScene(self.model.ptr, self.data.ptr, &self._offscreen_vopt,
                                 &self._offscreen_pert, &self._offscreen_cam, mjCAT_ALL, &self._offscreen_scn)
 
+                ### HERE 
+                # mjr_setBuffer(mjFB_OFFSCREEN, &self._offscreen_con);
                 mjr_render(rect, &self._offscreen_scn, &self._offscreen_con)
 
                 mjr_readPixels(&rgb_view[0], &depth_view[0], rect, &self._offscreen_con)
 
                 rgb_img = rgb_arr.reshape(rect.height, rect.width, 3)
+
+                # mjr_freeContext(&self._offscreen_con)
                 if depth:
                     depth_img = depth_arr.reshape(rect.height, rect.width)
                     return (rgb_img, depth_img)
                 else:
                     return rgb_img
+
 
 
         elif mode == 'window':

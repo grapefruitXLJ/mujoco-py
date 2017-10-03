@@ -114,6 +114,9 @@ cdef class MjRenderContext(object):
             self._set_mujoco_buffers()
 
     def render(self, width, height, camera_id=None):
+        # mjr_defaultContext(&self._con)
+        mjr_makeContext(self._model_ptr, &self._con, mjFONTSCALE_150)
+        mjr_setBuffer(mjFB_WINDOW, &self._con);
         cdef mjrRect rect
         rect.left = 0
         rect.bottom = 0
@@ -141,9 +144,11 @@ cdef class MjRenderContext(object):
         for marker_params in self._markers:
             self._add_marker_to_scene(marker_params)
 
+        ### HERE
         mjr_render(rect, &self._scn, &self._con)
         for gridpos, (text1, text2) in self._overlay.items():
             mjr_overlay(const.FONTSCALE_150, gridpos, rect, text1.encode(), text2.encode(), &self._con)
+        # mjr_freeContext(&self._con)
 
     def read_pixels(self, width, height, depth=True):
         cdef mjrRect rect
