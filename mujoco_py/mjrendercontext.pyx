@@ -153,11 +153,11 @@ cdef class MjRenderContext(object):
         print('mjr_render(rect, &_scn, &_con);')
         mjr_render(rect, &self._scn, &self._con)
         for gridpos, (text1, text2) in self._overlay.items():
-            print('mjr_overlay(const.FONTSCALE_150, {}, rect, {}, {}, &_con);'.format(gridpos, text1, text2))
+            print('// mjr_overlay(const.FONTSCALE_150, gridpos, rect, text1.encode(), text2.encode(), &self._con)')
             mjr_overlay(const.FONTSCALE_150, gridpos, rect, text1.encode(), text2.encode(), &self._con)
 
     def read_pixels(self, width, height, depth=True):
-        print('cdef mjrRect rect;')
+        print('mjrRect rect;')
         cdef mjrRect rect
         rect.left = 0
         rect.bottom = 0
@@ -166,9 +166,9 @@ cdef class MjRenderContext(object):
 
         rgb_arr = np.zeros(3 * rect.width * rect.height, dtype=np.uint8)
         depth_arr = np.zeros(rect.width * rect.height, dtype=np.float32)
-        print('cdef unsigned char[5120*2880] rgb_view;')
+        print('unsigned char rgb_view[5120*2880];')
         cdef unsigned char[::view.contiguous] rgb_view = rgb_arr
-        print('cdef float[5120*2880] depth_view;')
+        print('float depth_view[5120*2880];')
         cdef float[::view.contiguous] depth_view = depth_arr
         print('mjr_readPixels(&rgb_view[0], &depth_view[0], rect, &_con);')
         mjr_readPixels(&rgb_view[0], &depth_view[0], rect, &self._con)

@@ -20,14 +20,14 @@ int initOpenGL(int device_id) {
         return 1;
 
     // note: device id not used here
-    printf("ctx = OSMesaCreateContextExt(GL_RGBA, 24, 8, 8, 0);");
+    printf("ctx = OSMesaCreateContextExt(GL_RGBA, 24, 8, 8, 0);\n");
     ctx = OSMesaCreateContextExt(GL_RGBA, 24, 8, 8, 0);
     if( !ctx ) {
         printf("OSMesa context creation failed\n");
         return -1;
     }
 
-    printf("if( !OSMesaMakeCurrent(ctx, buffer, GL_UNSIGNED_BYTE, BUFFER_WIDTH, BUFFER_HEIGHT) ) { return -1; }");
+    printf("if( !OSMesaMakeCurrent(ctx, buffer, GL_UNSIGNED_BYTE, BUFFER_WIDTH, BUFFER_HEIGHT) ) { return -1; }\n");
     if( !OSMesaMakeCurrent(ctx, buffer, GL_UNSIGNED_BYTE, BUFFER_WIDTH, BUFFER_HEIGHT) ) {
         printf("OSMesa make current failed\n");
         return -1;

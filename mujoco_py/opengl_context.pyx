@@ -92,8 +92,9 @@ class GlfwContext(OpenGLContext):
 
         self._width = init_width
         self._height = init_height
-        print('window = glfwCreateWindow(_width, _height, "mujoco_py", None, None);')
+        print('glfwCreateWindow({}, {}, "mujoco_py", NULL, NULL);'.format(self._width, self._height))
         window = glfw.create_window(self._width, self._height, "mujoco_py", None, None)
+        print('after window = glfwCreateWindow(_width, _height, "mujoco_py", None, None);')
 
         if not window:
             raise GlfwError("Failed to create GLFW window")
@@ -109,14 +110,14 @@ class GlfwContext(OpenGLContext):
         if target_width != self._width or target_height != self._height:
             self._width = target_width
             self._height = target_height
-            print('glfw.set_window_size(self.window, target_width, target_height)')
+            print('glfwSetWindowSize(window, {}, {})'.format(target_width, target_height))
             glfw.set_window_size(self.window, target_width, target_height)
 
             # HAX: When running on a Mac with retina screen, the size
             # sometimes doubles
             width, height = glfw.get_framebuffer_size(self.window)
             if target_width != width:
-                print('glfw.set_window_size(self.window, target_width // 2, target_height // 2)')
+                print('glfwSetWindowSize(window, {} // 2, {} // 2)'.format(target_width, target_height))
                 glfw.set_window_size(self.window, target_width // 2, target_height // 2)
 
     @staticmethod
