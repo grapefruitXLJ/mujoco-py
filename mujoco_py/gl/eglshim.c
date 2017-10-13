@@ -54,7 +54,7 @@ int initOpenGL(int device_id)
         eglGetProcAddress("eglQueryDevicesEXT");
 
     eglQueryDevicesEXT(MAX_DEVICES, eglDevs, &numDevices);
-    printf("Found %d GPUs for rendering. Using device %d.\n", numDevices, device_id);
+    printf("//Found %d GPUs for rendering. Using device %d.\n", numDevices, device_id);
     if (device_id >= numDevices) {
         printf("Device id outside of range of available devices.\n");
         return -1;

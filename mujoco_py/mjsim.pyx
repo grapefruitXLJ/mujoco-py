@@ -55,7 +55,7 @@ cdef class MjSim(object):
         self.model = model
         if data is None:
             with wrap_mujoco_warning(): 
-                print('_data = mj_makeData(self.model.ptr)')
+                print('_data = mj_makeData(model);')
                 _data = mj_makeData(self.model.ptr)
             if _data == NULL:
                 raise Exception('mj_makeData failed!')
@@ -75,7 +75,7 @@ cdef class MjSim(object):
         Resets the simulation data and clears buffers.
         """
         with wrap_mujoco_warning():
-            print('mj_resetData(self.model.ptr, self.data.ptr)')
+            print('mj_resetData(model, _data);')
             mj_resetData(self.model.ptr, self.data.ptr)
 
         self.udd_state = None
@@ -86,7 +86,7 @@ cdef class MjSim(object):
         Computes the forward kinematics. Calls ``mj_forward`` internally.
         """
         with wrap_mujoco_warning():
-            print('mj_forward(self.model.ptr, self.data.ptr)')
+            print('mj_forward(model, _data);')
             mj_forward(self.model.ptr, self.data.ptr)
 
     def step(self):
@@ -101,7 +101,7 @@ cdef class MjSim(object):
 
         with wrap_mujoco_warning():
             for _ in range(self.nsubsteps):
-                print('mj_step(self.model.ptr, self.data.ptr)')
+                print('mj_step(model, _data);')
                 mj_step(self.model.ptr, self.data.ptr)
 
     def render(self, width=None, height=None, *, camera_name=None, depth=False,
