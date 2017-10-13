@@ -45,6 +45,7 @@ cdef class MjRenderContext(object):
 
         # Ensure the model data has been updated so that there
         # is something to render
+        print('sim.forward()')
         sim.forward()
 
         sim.add_render_context(self)
@@ -64,6 +65,7 @@ cdef class MjRenderContext(object):
 
         self._init_camera(sim)
         self._set_mujoco_buffers()
+        print('finished init')
 
     def update_sim(self, MjSim new_sim):
         if new_sim == self.sim:
@@ -76,12 +78,15 @@ cdef class MjRenderContext(object):
         self.sim = new_sim
 
     def _set_mujoco_buffers(self):
+        print('mjr_makeContext(self._model_ptr, &self._con, mjFONTSCALE_150)')
         mjr_makeContext(self._model_ptr, &self._con, mjFONTSCALE_150)
+        print('after mjr_makeContext(self._model_ptr, &self._con, mjFONTSCALE_150)')
         if self.offscreen:
             mjr_setBuffer(mjFB_OFFSCREEN, &self._con);
             if self._con.currentBuffer != mjFB_OFFSCREEN:
                 raise RuntimeError('Offscreen rendering not supported')
         else:
+            print('mjr_setBuffer(mjFB_WINDOW, &self._con);')
             mjr_setBuffer(mjFB_WINDOW, &self._con);
             if self._con.currentBuffer != mjFB_WINDOW:
                 raise RuntimeError('Window rendering not supported')

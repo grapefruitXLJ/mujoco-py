@@ -42,6 +42,7 @@ class MjViewerBasic(cymj.MjRenderContextWindow):
         glfw.set_key_callback(self.window, self.key_callback)
 
     def render(self):
+        print('call to render()')
         """
         Render the current simulation state to the screen or off-screen buffer.
         Call this in your main loop.

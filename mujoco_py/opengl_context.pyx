@@ -59,6 +59,7 @@ class GlfwContext(OpenGLContext):
         glfw.set_error_callback(GlfwContext._glfw_error_callback)
 
         # HAX: sometimes first init() fails, while second works fine.
+        print('glfw.init()')
         glfw.init()
         if not glfw.init():
             raise GlfwError("Failed to initialize GLFW")
@@ -90,6 +91,7 @@ class GlfwContext(OpenGLContext):
 
         self._width = init_width
         self._height = init_height
+        print('window = glfw.create_window(')
         window = glfw.create_window(
             self._width, self._height, "mujoco_py", None, None)
 
@@ -123,6 +125,7 @@ class OffscreenOpenGLContext():
 
     def __init__(self, device_id):
         self.device_id = device_id
+        print('res = initOpenGL(device_id)')
         res = initOpenGL(device_id)
         if res != 1:
             raise RuntimeError("Failed to initialize OpenGL")
