@@ -54,7 +54,8 @@ cdef class MjSim(object):
         self.nsubsteps = nsubsteps
         self.model = model
         if data is None:
-            with wrap_mujoco_warning():
+            with wrap_mujoco_warning(): 
+                print('_data = mj_makeData(self.model.ptr)')
                 _data = mj_makeData(self.model.ptr)
             if _data == NULL:
                 raise Exception('mj_makeData failed!')
@@ -74,6 +75,7 @@ cdef class MjSim(object):
         Resets the simulation data and clears buffers.
         """
         with wrap_mujoco_warning():
+            print('mj_resetData(self.model.ptr, self.data.ptr)')
             mj_resetData(self.model.ptr, self.data.ptr)
 
         self.udd_state = None
@@ -84,6 +86,7 @@ cdef class MjSim(object):
         Computes the forward kinematics. Calls ``mj_forward`` internally.
         """
         with wrap_mujoco_warning():
+            print('mj_forward(self.model.ptr, self.data.ptr)')
             mj_forward(self.model.ptr, self.data.ptr)
 
     def step(self):
@@ -98,6 +101,7 @@ cdef class MjSim(object):
 
         with wrap_mujoco_warning():
             for _ in range(self.nsubsteps):
+                print('mj_step(self.model.ptr, self.data.ptr)')
                 mj_step(self.model.ptr, self.data.ptr)
 
     def render(self, width=None, height=None, *, camera_name=None, depth=False,
@@ -127,8 +131,7 @@ cdef class MjSim(object):
         if mode == 'offscreen':
             with _MjSim_render_lock:
                 if self._render_context_offscreen is None:
-                    render_context = MjRenderContextOffscreen(
-                        self, device_id=device_id)
+                    render_context = MjRenderContextOffscreen(self, device_id=device_id)
                 else:
                     render_context = self._render_context_offscreen
 

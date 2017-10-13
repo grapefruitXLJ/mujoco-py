@@ -8,8 +8,8 @@ def _add_mujoco_bin_to_dyld_library_path():
     mujoco_path, _ = discover_mujoco()
     bin_path = os.path.join(mujoco_path, "bin")
     old_dyld_library_path = os.getenv("DYLD_LIBRARY_PATH", "")
-    os.environ["DYLD_LIBRARY_PATH"] = "{}:{}".format(
-        bin_path, old_dyld_library_path)
+    print('os.environ["DYLD_LIBRARY_PATH"] = "{}:{}"'.format(bin_path, old_dyld_library_path))
+    os.environ["DYLD_LIBRARY_PATH"] = "{}:{}".format(bin_path, old_dyld_library_path)
 
 
 try:
@@ -67,6 +67,7 @@ class GlfwContext(OpenGLContext):
         GlfwContext._GLFW_IS_INITIALIZED = True
 
     def make_context_current(self):
+        print('glfw.make_context_current(self.window)')
         glfw.make_context_current(self.window)
 
     def set_buffer_size(self, width, height):
@@ -91,9 +92,8 @@ class GlfwContext(OpenGLContext):
 
         self._width = init_width
         self._height = init_height
-        print('window = glfw.create_window(')
-        window = glfw.create_window(
-            self._width, self._height, "mujoco_py", None, None)
+        print('window = glfw.create_window(self._width, self._height, "mujoco_py", None, None)')
+        window = glfw.create_window(self._width, self._height, "mujoco_py", None, None)
 
         if not window:
             raise GlfwError("Failed to create GLFW window")
@@ -108,12 +108,14 @@ class GlfwContext(OpenGLContext):
         if target_width != self._width or target_height != self._height:
             self._width = target_width
             self._height = target_height
+            print('glfw.set_window_size(self.window, target_width, target_height)')
             glfw.set_window_size(self.window, target_width, target_height)
 
             # HAX: When running on a Mac with retina screen, the size
             # sometimes doubles
             width, height = glfw.get_framebuffer_size(self.window)
             if target_width != width:
+                print('glfw.set_window_size(self.window, target_width // 2, target_height // 2)')
                 glfw.set_window_size(self.window, target_width // 2, target_height // 2)
 
     @staticmethod
@@ -125,7 +127,6 @@ class OffscreenOpenGLContext():
 
     def __init__(self, device_id):
         self.device_id = device_id
-        print('res = initOpenGL(device_id)')
         res = initOpenGL(device_id)
         if res != 1:
             raise RuntimeError("Failed to initialize OpenGL")
