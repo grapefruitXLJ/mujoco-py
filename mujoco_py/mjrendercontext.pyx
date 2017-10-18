@@ -62,6 +62,7 @@ cdef class MjRenderContext(object):
         self._pert.active = 0
         self._pert.select = 0
         self.pert = WrapMjvPerturb(&self._pert)
+        self.model = sim.model
 
         self._markers = []
         self._overlay = {}
@@ -138,12 +139,15 @@ cdef class MjRenderContext(object):
             new_height = max(height, self._model_ptr.vis.global_.offheight)
             self.update_offscreen_size(new_width, new_height)
 
-        if camera_id is not None:
-            if camera_id == -1:
-                self.cam.type = const.CAMERA_FREE
-            else:
-                self.cam.type = const.CAMERA_FIXED
-            self.cam.fixedcamid = camera_id
+        if camera_id is None:
+            camera_id = -1
+        if camera_id == -1:
+            self.cam.type = const.CAMERA_FREE
+        else:
+            self.cam.type = const.CAMERA_FIXED
+        print('cam.type = {};'.format(self.cam.type));
+        print('cam.fixedcamid = {};'.format(camera_id));
+        self.cam.fixedcamid = camera_id
 
         self.opengl_context.set_buffer_size(width, height)
 
@@ -286,12 +290,14 @@ class MjRenderContextWindow(MjRenderContext):
     def window(self):
         return self.opengl_context.window
 
-    def render(self):
+    def render(self, dimensions=None, camera_id=None):
         if self.window is None or glfw.window_should_close(self.window):
             return
 
         print(self.pre + 'glfwMakeContextCurrent(window);')
         glfw.make_context_current(self.window)
-        super().render(*glfw.get_framebuffer_size(self.window))
-        print('glfw.swap_buffers(self.window);')
+        if dimensions is None:
+            dimensions = glfw.get_framebuffer_size(self.window)
+        super().render(*dimensions, camera_id=camera_id)
+        print(self.pre + 'glfwSwapBuffers(window);')
         glfw.swap_buffers(self.window)
