@@ -33,13 +33,13 @@ cdef class MjRenderContext(object):
 
     def __cinit__(self):
         maxgeom = 1000
-        print('mjv_makeScene(&_scn, {});'.format(maxgeom))
+        print('mjv_makeScene(&scn, {});'.format(maxgeom))
         mjv_makeScene(&self._scn, maxgeom)
-        print('mjv_defaultCamera(&_cam);')
+        print('mjv_defaultCamera(&cam);')
         mjv_defaultCamera(&self._cam)
-        print('mjv_defaultOption(&_vopt);')
+        print('mjv_defaultOption(&opt);')
         mjv_defaultOption(&self._vopt)
-        print('mjr_defaultContext(&_con);')
+        print('mjr_defaultContext(&con);')
         mjr_defaultContext(&self._con)
 
     def __init__(self, MjSim sim, bint offscreen=True, int device_id=-1):
@@ -80,15 +80,16 @@ cdef class MjRenderContext(object):
         self.sim = new_sim
 
     def _set_mujoco_buffers(self):
-        print('mjr_makeContext(model, &_con, mjFONTSCALE_150);')
+        self.pre = "//offscreen\n" if self.offscreen else "//window\n"
+        print(self.pre + 'mjr_makeContext(model, &con, mjFONTSCALE_150);')
         mjr_makeContext(self._model_ptr, &self._con, mjFONTSCALE_150)
         if self.offscreen:
-            print('mjr_setBuffer(mjFB_OFFSCREEN, &_con);')
+            print(self.pre + 'mjr_setBuffer(mjFB_OFFSCREEN, &con);')
             mjr_setBuffer(mjFB_OFFSCREEN, &self._con);
             if self._con.currentBuffer != mjFB_OFFSCREEN:
                 raise RuntimeError('Offscreen rendering not supported')
         else:
-            print('mjr_setBuffer(mjFB_WINDOW, &self._con);')
+            print(self.pre + 'mjr_setBuffer(mjFB_WINDOW, &self.con);')
             mjr_setBuffer(mjFB_WINDOW, &self._con);
             if self._con.currentBuffer != mjFB_WINDOW:
                 raise RuntimeError('Window rendering not supported')
@@ -117,16 +118,19 @@ cdef class MjRenderContext(object):
         if width != self._con.offWidth or height != self._con.offHeight:
             self._model_ptr.vis.global_.offwidth = width
             self._model_ptr.vis.global_.offheight = height
-            print('mjr_freeContext(&self._con);')
+            print(self.pre + 'mjr_freeContext(&self.con);')
             mjr_freeContext(&self._con)
             self._set_mujoco_buffers()
 
     def render(self, width, height, camera_id=None):
+        print('mjrRect render_rect;')
         cdef mjrRect rect
         rect.left = 0
         rect.bottom = 0
         rect.width = width
+        print(self.pre + 'render_rect.width = {};'.format(width))
         rect.height = height
+        print(self.pre + 'render_rect.height = {};'.format(height))
 
         # Sometimes buffers are too small.
         if width > self._con.offWidth or height > self._con.offHeight:
@@ -143,34 +147,33 @@ cdef class MjRenderContext(object):
 
         self.opengl_context.set_buffer_size(width, height)
 
-        print('mjv_updateScene(model, _data, &_vopt, &_pert, &_cam, mjCAT_ALL, &_scn);')
+        print(self.pre + 'mjv_updateScene(model, d, &opt, &pert, &cam, mjCAT_ALL, &scn);')
         mjv_updateScene(self._model_ptr, self._data_ptr, &self._vopt,
                         &self._pert, &self._cam, mjCAT_ALL, &self._scn)
 
         for marker_params in self._markers:
             self._add_marker_to_scene(marker_params)
 
-        print('mjr_render(rect, &_scn, &_con);')
+        print(self.pre + 'mjr_render(rect, &scn, &con);')
         mjr_render(rect, &self._scn, &self._con)
         for gridpos, (text1, text2) in self._overlay.items():
-            print('// mjr_overlay(const.FONTSCALE_150, gridpos, rect, text1.encode(), text2.encode(), &self._con)')
             mjr_overlay(const.FONTSCALE_150, gridpos, rect, text1.encode(), text2.encode(), &self._con)
 
     def read_pixels(self, width, height, depth=True):
-        print('mjrRect rect;')
+        print(self.pre + 'mjrRect read_pixels_rect;')
         cdef mjrRect rect
         rect.left = 0
         rect.bottom = 0
+        print(self.pre + 'read_pixels_rect.width = {};'.format(width))
         rect.width = width
+        print(self.pre + 'read_pixels_rect.height = {};'.format(height))
         rect.height = height
 
         rgb_arr = np.zeros(3 * rect.width * rect.height, dtype=np.uint8)
         depth_arr = np.zeros(rect.width * rect.height, dtype=np.float32)
-        print('unsigned char rgb_view[5120*2880];')
         cdef unsigned char[::view.contiguous] rgb_view = rgb_arr
-        print('float depth_view[5120*2880];')
         cdef float[::view.contiguous] depth_view = depth_arr
-        print('mjr_readPixels(&rgb_view[0], &depth_view[0], rect, &_con);')
+        print(self.pre + 'mjr_readPixels(rgb, NULL, rect, &con);')
         mjr_readPixels(&rgb_view[0], &depth_view[0], rect, &self._con)
         rgb_img = rgb_arr.reshape(rect.height, rect.width, 3)
         if depth:
@@ -182,7 +185,7 @@ cdef class MjRenderContext(object):
     def upload_texture(self, int tex_id):
         """ Uploads given texture to the GPU. """
         self.opengl_context.make_context_current()
-        print('mjr_uploadTexture(self._model_ptr, &self._con, tex_id);')
+        print(self.pre + 'mjr_uploadTexture(m, &con, tex_id);')
         mjr_uploadTexture(self._model_ptr, &self._con, tex_id)
 
     def draw_pixels(self, np.ndarray[np.uint8_t, ndim=3] image, int left, int bottom):
@@ -193,12 +196,12 @@ cdef class MjRenderContext(object):
         viewport.bottom = bottom
         viewport.width = image.shape[1]
         viewport.height = image.shape[0]
-        print('mjr_drawPixels(&image_view[0], NULL, viewport, &self._con);')
+        print(self.pre + 'mjr_drawPixels(&image_view[0], NULL, viewport, &self._con);')
         mjr_drawPixels(&image_view[0], NULL, viewport, &self._con)
 
     def move_camera(self, int action, double reldx, double reldy):
         """ Moves the camera based on mouse movements. Action is one of mjMOUSE_*. """
-        print('mjv_moveCamera(self._model_ptr, action, reldx, reldy, &self._scn, &self._cam);')
+        print(self.pre + 'mjv_moveCamera(m, action, reldx, reldy, &scn, &cam);')
         mjv_moveCamera(self._model_ptr, action, reldx, reldy, &self._scn, &self._cam)
 
     def add_overlay(self, int gridpos, str text1, str text2):
@@ -258,20 +261,22 @@ cdef class MjRenderContext(object):
 
 
     def __dealloc__(self):
-        print('mjr_freeContext(&self._con);')
+        print(self.pre + 'mjr_freeContext(con);')
         mjr_freeContext(&self._con)
-        print('mjv_freeScene(&self._scn);')
+        print(self.pre + 'mjv_freeScene(scn);')
         mjv_freeScene(&self._scn)
 
 
 class MjRenderContextOffscreen(MjRenderContext):
 
     def __cinit__(self, MjSim sim, int device_id):
+        self.pre = '//offscreen\n'
         super().__init__(sim, offscreen=True, device_id=device_id)
 
 class MjRenderContextWindow(MjRenderContext):
 
     def __init__(self, MjSim sim):
+        self.pre = '//window\n'
         super().__init__(sim, offscreen=False)
 
         assert isinstance(self.opengl_context, GlfwContext), (
@@ -285,7 +290,7 @@ class MjRenderContextWindow(MjRenderContext):
         if self.window is None or glfw.window_should_close(self.window):
             return
 
-        print('glfw.make_context_current(self.window);')
+        print(self.pre + 'glfwMakeContextCurrent(window);')
         glfw.make_context_current(self.window)
         super().render(*glfw.get_framebuffer_size(self.window))
         print('glfw.swap_buffers(self.window);')

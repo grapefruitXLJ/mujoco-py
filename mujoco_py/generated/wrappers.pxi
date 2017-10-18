@@ -3823,6 +3823,7 @@ cdef inline np.ndarray _wrap_mjtNum_2d(mjtNum* a, int shape0, int shape1):
     return np.asarray(b)
 
 def _mj_activate(str filename):
+    print('mj_activate("mjkey.txt");')
     return mj_activate(filename.encode())
 
 def _mj_deactivate():
