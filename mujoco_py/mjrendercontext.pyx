@@ -31,7 +31,7 @@ cdef class MjRenderContext(object):
     cdef readonly bint offscreen
     cdef public object sim
 
-     def __cinit__(self):
+    def __cinit__(self):
         maxgeom = 1000
         mjv_makeScene(&self._scn, maxgeom)
         mjv_defaultCamera(&self._cam)
@@ -132,8 +132,6 @@ cdef class MjRenderContext(object):
             self.cam.type = const.CAMERA_FREE
         else:
             self.cam.type = const.CAMERA_FIXED
-        print('cam.type = {};'.format(self.cam.type));
-        print('cam.fixedcamid = {};'.format(camera_id));
         self.cam.fixedcamid = camera_id
 
         if visible:
