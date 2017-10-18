@@ -31,7 +31,7 @@ cdef class MjRenderContext(object):
     cdef readonly bint offscreen
     cdef public object sim
 
-    def __cinit__(self):
+     def __cinit__(self):
         maxgeom = 1000
         mjv_makeScene(&self._scn, maxgeom)
         mjv_defaultCamera(&self._cam)
@@ -113,7 +113,7 @@ cdef class MjRenderContext(object):
             mjr_freeContext(&self._con)
             self._set_mujoco_buffers()
 
-    def render(self, width, height, camera_id=None):
+    def render(self, width, height, camera_id=None, visible=True):
         cdef mjrRect rect
         rect.left = 0
         rect.bottom = 0
@@ -126,14 +126,18 @@ cdef class MjRenderContext(object):
             new_height = max(height, self._model_ptr.vis.global_.offheight)
             self.update_offscreen_size(new_width, new_height)
 
-        if camera_id is not None:
-            if camera_id == -1:
-                self.cam.type = const.CAMERA_FREE
-            else:
-                self.cam.type = const.CAMERA_FIXED
-            self.cam.fixedcamid = camera_id
+        if camera_id is None:
+            camera_id = -1
+        if camera_id == -1:
+            self.cam.type = const.CAMERA_FREE
+        else:
+            self.cam.type = const.CAMERA_FIXED
+        print('cam.type = {};'.format(self.cam.type));
+        print('cam.fixedcamid = {};'.format(camera_id));
+        self.cam.fixedcamid = camera_id
 
-        self.opengl_context.set_buffer_size(width, height)
+        if visible:
+            self.opengl_context.set_buffer_size(width, height)
 
         mjv_updateScene(self._model_ptr, self._data_ptr, &self._vopt,
                         &self._pert, &self._cam, mjCAT_ALL, &self._scn)
@@ -261,10 +265,15 @@ class MjRenderContextWindow(MjRenderContext):
     def window(self):
         return self.opengl_context.window
 
-    def render(self):
+    def _render(self, dimensions=None, camera_id=None, visible=True):
+        glfw.make_context_current(self.window)
+        if dimensions is None:
+            dimensions = glfw.get_framebuffer_size(self.window)
+        super().render(*dimensions, camera_id, visible)
+
+    def render(self, dimensions=None, camera_id=None):
         if self.window is None or glfw.window_should_close(self.window):
             return
 
-        glfw.make_context_current(self.window)
-        super().render(*glfw.get_framebuffer_size(self.window))
+        self._render(dimensions, camera_id, visible=True)
         glfw.swap_buffers(self.window)

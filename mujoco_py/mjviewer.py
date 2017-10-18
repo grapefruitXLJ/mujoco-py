@@ -206,6 +206,9 @@ class MjViewer(MjViewerBasic):
         self._markers[:] = []
         self._overlay.clear()
 
+    def render_offscreen(self, dimensions=None, camera_id=None):
+        self._render(dimensions, camera_id, visible=False)
+
     def _read_pixels_as_in_window(self):
         # Reads pixels with markers and overlay from the same camera as screen.
         resolution = glfw.get_framebuffer_size(
@@ -246,8 +249,8 @@ class MjViewer(MjViewerBasic):
                              self._run_speed, "[S]lower, [F]aster")
         self.add_overlay(
             const.GRID_TOPLEFT, "Ren[d]er every frame", "Off" if self._render_every_frame else "On")
-        self.add_overlay(const.GRID_TOPLEFT, "Switch camera (#cams = %d)" % (self._ncam + 1),
-                                             "[Tab] (camera ID = %d)" % self.cam.fixedcamid)
+        # self.add_overlay(const.GRID_TOPLEFT, "Switch camera (#cams = %d)" % (self._ncam + 1),
+                                             # "[Tab] (camera ID = %d)" % self.cam.fixedcamid)
         self.add_overlay(const.GRID_TOPLEFT, "[C]ontact forces", "Off" if self.vopt.flags[
                          10] == 1 else "On")
         self.add_overlay(
