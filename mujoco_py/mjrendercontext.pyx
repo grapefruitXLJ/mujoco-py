@@ -145,7 +145,10 @@ cdef class MjRenderContext(object):
             mjr_freeContext(&self._con)
             self._set_mujoco_buffers()
 
-    def render(self, width, height, camera_id=None, visible=True):
+    def render(self, dimensions=None, camera_id=None, visible=True):
+        if dimensions is None:
+            dimensions = self.opengl_context.get_buffer_size()
+        height, width = dimensions
         print('mjrRect render_rect;')
         cdef mjrRect rect
         rect.left = 0
@@ -304,17 +307,10 @@ class MjRenderContextWindow(MjRenderContext):
     def window(self):
         return self.opengl_context.window
 
-    def _render(self, dimensions=None, camera_id=None, visible=True):
-        # print(self.pre + 'glfwMakeContextCurrent(window);')
-        # glfw.make_context_current(self.window)
-        if dimensions is None:
-            dimensions = glfw.get_framebuffer_size(self.window)
-        super().render(*dimensions, camera_id, visible)
-
     def render(self, dimensions=None, camera_id=None):
         if self.window is None or glfw.window_should_close(self.window):
             return
 
-        self._render(dimensions, camera_id, visible=True)
+        super().render(dimensions, camera_id, visible=True)
         print(self.pre + 'glfwSwapBuffers(window);')
         glfw.swap_buffers(self.window)

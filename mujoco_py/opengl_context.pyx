@@ -29,6 +29,10 @@ class OpenGLContext(metaclass=ABCMeta):
     def set_buffer_size(self, width, height):
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_buffer_size(self):
+        raise NotImplementedError()
+
 
 class GlfwError(RuntimeError):
     pass

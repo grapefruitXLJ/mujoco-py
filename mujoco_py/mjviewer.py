@@ -207,7 +207,7 @@ class MjViewer(MjViewerBasic):
         self._overlay.clear()
 
     def render_offscreen(self, dimensions=None, camera_id=None):
-        self._render(dimensions, camera_id, visible=False)
+        cymj.MjRenderContext.render(self, dimensions, camera_id, visible=False)
 
     def _read_pixels_as_in_window(self):
         # Reads pixels with markers and overlay from the same camera as screen.
