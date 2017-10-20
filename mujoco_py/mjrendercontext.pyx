@@ -287,6 +287,10 @@ cdef class MjRenderContext(object):
         print(self.pre + 'mjv_freeScene(scn);')
         mjv_freeScene(&self._scn)
 
+    @property
+    def window(self):
+        return self.opengl_context.window
+
 
 class MjRenderContextOffscreen(MjRenderContext):
 
