@@ -311,7 +311,7 @@ class MjRenderContextWindow(MjRenderContext):
     def window(self):
         return self.opengl_context.window
 
-    def render(self, dimensions=None, camera_id=None):
+    def _render(self, dimensions=None, camera_id=None):
         if self.window is None or glfw.window_should_close(self.window):
             return
 

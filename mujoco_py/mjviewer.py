@@ -10,7 +10,7 @@ import numpy as np
 import imageio
 
 
-class MjViewerBasic(cymj.MjRenderContextWindow):
+class MjViewerBasic(cymj.MjRenderContext):
     """
     A simple display GUI showing the scene of an :class:`.MjSim` with a mouse-movable camera.
 
@@ -23,7 +23,8 @@ class MjViewerBasic(cymj.MjRenderContextWindow):
     """
 
     def __init__(self, sim):
-        super().__init__(sim)
+        self.pre = '//window\n'
+        super().__init__(sim, offscreen=False)
 
         self._gui_lock = Lock()
         self._button_left_pressed = False
@@ -53,6 +54,8 @@ class MjViewerBasic(cymj.MjRenderContextWindow):
 
         with self._gui_lock:
             super().render(dimensions=dimensions, camera_id=camera_id)
+            print(self.pre + 'glfwSwapBuffers(window);')
+            glfw.swap_buffers(self.window)
 
         glfw.poll_events()
 
