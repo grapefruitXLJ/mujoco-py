@@ -66,26 +66,27 @@ cdef class MjRenderContext(object):
         self._init_camera(sim)
         self._set_mujoco_buffers()
 
-    def _set_free_camera(self):
-        self.cam.type = -1
-        self.cam.type = const.CAMERA_FREE
+    def _set_camera(self, id, type):
+        print('cam.fixedcamid = {};'.format(id))
+        self.cam.fixedcamid = id
+        print('cam.type = {};'.format(type))
+        self.cam.type = type
+        print('mjv_updateCamera(m, d, &cam, &scn);')
+        mjv_updateCamera(self._model_ptr, self._data_ptr, &self._cam, &self._scn)
 
+    def _set_free_camera(self):
+        self._set_camera(-1, const.CAMERA_FREE)
 
     @contextmanager
-    def _set_camera(self, id):
+    def _camera(self, id):
         if id is None:
             id = -1
         assert type(id) is int
         if id != -1:
-            self.cam.type = const.CAMERA_FIXED
-            self.cam.fixedcamid = id
+            self._set_camera(id, const.CAMERA_FIXED)
+
         yield
         self._set_free_camera()
-
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self._set_free_camera()
-
 
 
     def update_sim(self, MjSim new_sim):
@@ -148,7 +149,7 @@ cdef class MjRenderContext(object):
             new_height = max(height, self._model_ptr.vis.global_.offheight)
             self.update_offscreen_size(new_width, new_height)
 
-        with self._set_camera(camera_id):
+        with self._camera(camera_id):
             if visible:
                 self.opengl_context.set_buffer_size(width, height)
 
