@@ -287,6 +287,10 @@ cdef class MjRenderContext(object):
         print(self.pre + 'mjv_freeScene(scn);')
         mjv_freeScene(&self._scn)
 
+    @property
+    def window(self):
+        return self.opengl_context.window
+
 
 class MjRenderContextOffscreen(MjRenderContext):
 
@@ -308,9 +312,9 @@ class MjRenderContextWindow(MjRenderContext):
         return self.opengl_context.window
 
     def render(self, dimensions=None, camera_id=None):
-        if self.window is None or glfw.window_should_close(self.window):
+        if self.opengl_context.window is None or glfw.window_should_close(self.opengl_context.window):
             return
 
         super().render(dimensions, camera_id, visible=True)
         print(self.pre + 'glfwSwapBuffers(window);')
-        glfw.swap_buffers(self.window)
+        glfw.swap_buffers(self.opengl_context.window)

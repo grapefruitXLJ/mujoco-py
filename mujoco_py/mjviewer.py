@@ -10,7 +10,7 @@ import numpy as np
 import imageio
 
 
-class MjViewerBasic(cymj.MjRenderContextWindow):
+class MjViewerBasic(cymj.MjRenderContext):
     """
     A simple display GUI showing the scene of an :class:`.MjSim` with a mouse-movable camera.
 
@@ -23,7 +23,7 @@ class MjViewerBasic(cymj.MjRenderContextWindow):
     """
 
     def __init__(self, sim):
-        super().__init__(sim)
+        super().__init__(sim, offscreen=False)
 
         self._gui_lock = Lock()
         self._button_left_pressed = False
@@ -41,20 +41,23 @@ class MjViewerBasic(cymj.MjRenderContextWindow):
         glfw.set_scroll_callback(self.window, self._scroll_callback)
         glfw.set_key_callback(self.window, self.key_callback)
 
-    def render(self, dimensions=None, camera_id=None):
+    def render(self, dimensions=None, camera_id=None, offscreen=True):
         """
         Render the current simulation state to the screen or off-screen buffer.
         Call this in your main loop.
         """
-        if self.window is None:
-            return
-        elif glfw.window_should_close(self.window):
-            exit(0)
+        if not offscreen:
+            if self.window is None:
+                return
+            elif glfw.window_should_close(self.window):
+                exit(0)
 
         with self._gui_lock:
             super().render(dimensions=dimensions, camera_id=camera_id)
 
-        glfw.poll_events()
+        if not offscreen:
+            glfw.swap_buffers(self.window)
+            glfw.poll_events()
 
     def key_callback(self, window, key, scancode, action, mods):
         if action == glfw.RELEASE and key == glfw.KEY_ESCAPE:
