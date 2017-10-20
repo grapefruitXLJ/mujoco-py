@@ -1,5 +1,6 @@
 from threading import Lock
 from mujoco_py.generated import const
+from contextlib import contextmanager
 
 cdef class MjRenderContext(object):
     """
@@ -164,14 +165,14 @@ cdef class MjRenderContext(object):
             if visible:
                 self.opengl_context.set_buffer_size(width, height)
 
-	    print(self.pre + 'mjv_updateScene(model, d, &opt, &pert, &cam, mjCAT_ALL, &scn);'
+            print(self.pre + 'mjv_updateScene(model, d, &opt, &pert, &cam, mjCAT_ALL, &scn);')
             mjv_updateScene(self._model_ptr, self._data_ptr, &self._vopt,
                             &self._pert, &self._cam, mjCAT_ALL, &self._scn)
 
             for marker_params in self._markers:
                 self._add_marker_to_scene(marker_params)
 
-       	    print(self.pre + 'mjr_render(rect, &scn, &con);')
+            print(self.pre + 'mjr_render(rect, &scn, &con);')
             mjr_render(rect, &self._scn, &self._con)
             for gridpos, (text1, text2) in self._overlay.items():
                 mjr_overlay(const.FONTSCALE_150, gridpos, rect, text1.encode(), text2.encode(), &self._con)
@@ -304,8 +305,8 @@ class MjRenderContextWindow(MjRenderContext):
         return self.opengl_context.window
 
     def _render(self, dimensions=None, camera_id=None, visible=True):
-        print(self.pre + 'glfwMakeContextCurrent(window);')
-        glfw.make_context_current(self.window)
+        # print(self.pre + 'glfwMakeContextCurrent(window);')
+        # glfw.make_context_current(self.window)
         if dimensions is None:
             dimensions = glfw.get_framebuffer_size(self.window)
         super().render(*dimensions, camera_id, visible)

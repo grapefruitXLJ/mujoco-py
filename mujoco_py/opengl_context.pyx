@@ -47,6 +47,7 @@ class GlfwContext(OpenGLContext):
         self._height = self._INIT_HEIGHT
         self.window = self._create_window(offscreen)
         self._set_window_size(self._width, self._height)
+        self.make_context_current()
 
     @staticmethod
     def _init_glfw():
