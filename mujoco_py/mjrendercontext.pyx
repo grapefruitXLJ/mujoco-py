@@ -62,13 +62,34 @@ cdef class MjRenderContext(object):
         self._pert.active = 0
         self._pert.select = 0
         self.pert = WrapMjvPerturb(&self._pert)
-        self.model = sim.model
 
         self._markers = []
         self._overlay = {}
 
         self._init_camera(sim)
         self._set_mujoco_buffers()
+
+    def _set_free_camera(self):
+        self.cam.type = -1
+        self.cam.type = const.CAMERA_FREE
+
+
+    @contextmanager
+    def _set_camera(self, id):
+        if id is None:
+            id = -1
+        assert type(id) is int
+        if id != -1:
+            self.cam.type = const.CAMERA_FIXED
+            self.cam.fixedcamid = id
+        yield
+        self._set_free_camera()
+
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._set_free_camera()
+
+
 
     def update_sim(self, MjSim new_sim):
         if new_sim == self.sim:
@@ -109,8 +130,7 @@ cdef class MjRenderContext(object):
 
     def _init_camera(self, sim):
         # Make the free camera look at the scene
-        self.cam.type = const.CAMERA_FREE
-        self.cam.fixedcamid = -1
+        self._set_free_camera()
         for i in range(3):
             self.cam.lookat[i] = sim.model.stat.center[i]
         self.cam.distance = sim.model.stat.extent
@@ -139,30 +159,21 @@ cdef class MjRenderContext(object):
             new_height = max(height, self._model_ptr.vis.global_.offheight)
             self.update_offscreen_size(new_width, new_height)
 
-        if camera_id is None:
-            camera_id = -1
-        if camera_id == -1:
-            self.cam.type = const.CAMERA_FREE
-        else:
-            self.cam.type = const.CAMERA_FIXED
-        print('cam.type = {};'.format(self.cam.type));
-        print('cam.fixedcamid = {};'.format(camera_id));
-        self.cam.fixedcamid = camera_id
+        with self._set_camera(camera_id):
+            if visible:
+                self.opengl_context.set_buffer_size(width, height)
 
-        if visible:
-            self.opengl_context.set_buffer_size(width, height)
+	    print(self.pre + 'mjv_updateScene(model, d, &opt, &pert, &cam, mjCAT_ALL, &scn);'
+            mjv_updateScene(self._model_ptr, self._data_ptr, &self._vopt,
+                            &self._pert, &self._cam, mjCAT_ALL, &self._scn)
 
-        print(self.pre + 'mjv_updateScene(model, d, &opt, &pert, &cam, mjCAT_ALL, &scn);')
-        mjv_updateScene(self._model_ptr, self._data_ptr, &self._vopt,
-                        &self._pert, &self._cam, mjCAT_ALL, &self._scn)
+            for marker_params in self._markers:
+                self._add_marker_to_scene(marker_params)
 
-        for marker_params in self._markers:
-            self._add_marker_to_scene(marker_params)
-
-        print(self.pre + 'mjr_render(rect, &scn, &con);')
-        mjr_render(rect, &self._scn, &self._con)
-        for gridpos, (text1, text2) in self._overlay.items():
-            mjr_overlay(const.FONTSCALE_150, gridpos, rect, text1.encode(), text2.encode(), &self._con)
+       	    print(self.pre + 'mjr_render(rect, &scn, &con);')
+            mjr_render(rect, &self._scn, &self._con)
+            for gridpos, (text1, text2) in self._overlay.items():
+                mjr_overlay(const.FONTSCALE_150, gridpos, rect, text1.encode(), text2.encode(), &self._con)
 
     def read_pixels(self, width, height, depth=True):
         print(self.pre + 'mjrRect read_pixels_rect;')
