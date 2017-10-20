@@ -12,7 +12,6 @@ MjSimState = cymj.MjSimState
 MjSimPool = cymj.MjSimPool
 MjRenderContext = cymj.MjRenderContext
 MjRenderContextOffscreen = cymj.MjRenderContextOffscreen
-MjRenderContextWindow = cymj.MjRenderContextWindow
 MjBatchRenderer = cymj.MjBatchRenderer
 
 

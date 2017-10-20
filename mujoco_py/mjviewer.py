@@ -23,6 +23,7 @@ class MjViewerBasic(cymj.MjRenderContext):
     """
 
     def __init__(self, sim):
+        self.pre = '//window\n'
         super().__init__(sim, offscreen=False)
 
         self._gui_lock = Lock()
@@ -41,7 +42,7 @@ class MjViewerBasic(cymj.MjRenderContext):
         glfw.set_scroll_callback(self.window, self._scroll_callback)
         glfw.set_key_callback(self.window, self.key_callback)
 
-    def render(self, dimensions=None, camera_id=None, offscreen=True):
+    def render(self, dimensions=None, camera_id=None, offscreen=False):
         """
         Render the current simulation state to the screen or off-screen buffer.
         Call this in your main loop.
@@ -54,6 +55,7 @@ class MjViewerBasic(cymj.MjRenderContext):
 
         with self._gui_lock:
             super().render(dimensions=dimensions, camera_id=camera_id)
+            print(self.pre + 'glfwSwapBuffers(window);')
 
         if not offscreen:
             glfw.swap_buffers(self.window)
