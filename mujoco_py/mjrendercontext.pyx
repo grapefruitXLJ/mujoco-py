@@ -297,24 +297,3 @@ class MjRenderContextOffscreen(MjRenderContext):
     def __cinit__(self, MjSim sim, int device_id):
         self.pre = '//offscreen\n'
         super().__init__(sim, offscreen=True, device_id=device_id)
-
-class MjRenderContextWindow(MjRenderContext):
-
-    def __init__(self, MjSim sim):
-        self.pre = '//window\n'
-        super().__init__(sim, offscreen=False)
-
-        assert isinstance(self.opengl_context, GlfwContext), (
-            "Only GlfwContext supported for windowed rendering")
-
-    @property
-    def window(self):
-        return self.opengl_context.window
-
-    def _render(self, dimensions=None, camera_id=None):
-        if self.window is None or glfw.window_should_close(self.window):
-            return
-
-        super().render(dimensions, camera_id, visible=True)
-        print(self.pre + 'glfwSwapBuffers(window);')
-        glfw.swap_buffers(self.window)

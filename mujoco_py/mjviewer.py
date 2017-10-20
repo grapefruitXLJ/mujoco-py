@@ -42,22 +42,24 @@ class MjViewerBasic(cymj.MjRenderContext):
         glfw.set_scroll_callback(self.window, self._scroll_callback)
         glfw.set_key_callback(self.window, self.key_callback)
 
-    def render(self, dimensions=None, camera_id=None, offscreen=True):
+    def render(self, dimensions=None, camera_id=None, offscreen=False):
         """
         Render the current simulation state to the screen or off-screen buffer.
         Call this in your main loop.
         """
-        if self.window is None:
-            return
-        elif glfw.window_should_close(self.window):
-            exit(0)
+        if not offscreen:
+            if self.window is None:
+                return
+            elif glfw.window_should_close(self.window):
+                exit(0)
 
         with self._gui_lock:
             super().render(dimensions=dimensions, camera_id=camera_id)
             print(self.pre + 'glfwSwapBuffers(window);')
-            glfw.swap_buffers(self.window)
 
-        glfw.poll_events()
+        if not offscreen:
+            glfw.swap_buffers(self.window)
+            glfw.poll_events()
 
     def key_callback(self, window, key, scancode, action, mods):
         if action == glfw.RELEASE and key == glfw.KEY_ESCAPE:
