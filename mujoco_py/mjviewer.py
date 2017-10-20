@@ -42,6 +42,10 @@ class MjViewerBasic(cymj.MjRenderContext):
         glfw.set_scroll_callback(self.window, self._scroll_callback)
         glfw.set_key_callback(self.window, self.key_callback)
 
+    def render_offscreen(self, dimensions=None, camera_id=None):
+        cymj.MjRenderContext.render(self, dimensions, camera_id, visible=False)
+
+
     def render(self, dimensions=None, camera_id=None, offscreen=False):
         """
         Render the current simulation state to the screen or off-screen buffer.
@@ -55,9 +59,9 @@ class MjViewerBasic(cymj.MjRenderContext):
 
         with self._gui_lock:
             super().render(dimensions=dimensions, camera_id=camera_id)
-            print(self.pre + 'glfwSwapBuffers(window);')
 
         if not offscreen:
+            print(self.pre + 'glfwSwapBuffers(window);')
             glfw.swap_buffers(self.window)
             glfw.poll_events()
 
@@ -166,11 +170,14 @@ class MjViewer(MjViewerBasic):
         self._hide_overlay = False  # hide the entire overlay.
         self._user_overlay = {}
 
-    def render(self, dimensions=None, camera_id=None):
+    def render(self, dimensions=None, camera_id=None, offscreen=False):
         """
         Render the current simulation state to the screen or off-screen buffer.
         Call this in your main loop.
         """
+        if offscreen:
+            super().render(dimensions=dimensions, camera_id=camera_id, offscreen=offscreen)
+            return
 
         def render_inner_loop(self):
             render_start = time.time()
@@ -210,9 +217,6 @@ class MjViewer(MjViewerBasic):
         # Markers and overlay are regenerated in every pass.
         self._markers[:] = []
         self._overlay.clear()
-
-    def render_offscreen(self, dimensions=None, camera_id=None):
-        cymj.MjRenderContext.render(self, dimensions, camera_id, visible=False)
 
     def _read_pixels_as_in_window(self):
         # Reads pixels with markers and overlay from the same camera as screen.
