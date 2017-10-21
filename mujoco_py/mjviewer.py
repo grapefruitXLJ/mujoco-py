@@ -31,15 +31,16 @@ class MjViewerBasic(cymj.MjRenderContext):
         self._last_mouse_x = 0
         self._last_mouse_y = 0
 
-        framebuffer_width, _ = glfw.get_framebuffer_size(self.window)
-        window_width, _ = glfw.get_window_size(self.window)
-        self._scale = framebuffer_width * 1.0 / window_width
+        if not offscreen:
+            framebuffer_width, _ = glfw.get_buffer_size()
+            window_width, _ = glfw.get_window_size(self.window)
+            self._scale = framebuffer_width * 1.0 / window_width
 
-        glfw.set_cursor_pos_callback(self.window, self._cursor_pos_callback)
-        glfw.set_mouse_button_callback(
-            self.window, self._mouse_button_callback)
-        glfw.set_scroll_callback(self.window, self._scroll_callback)
-        glfw.set_key_callback(self.window, self.key_callback)
+            glfw.set_cursor_pos_callback(self.window, self._cursor_pos_callback)
+            glfw.set_mouse_button_callback(
+                self.window, self._mouse_button_callback)
+            glfw.set_scroll_callback(self.window, self._scroll_callback)
+            glfw.set_key_callback(self.window, self.key_callback)
 
 
     def render(self, dimensions=None, camera_id=None, offscreen=False):
