@@ -53,6 +53,7 @@ class MjViewerBasic(cymj.MjRenderContext):
                 return
             elif glfw.window_should_close(self.window):
                 exit(0)
+            self.opengl_context.make_context_current()
 
         with self._gui_lock:
             super().render(dimensions=dimensions, camera_id=camera_id)
