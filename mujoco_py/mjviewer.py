@@ -22,9 +22,8 @@ class MjViewerBasic(cymj.MjRenderContext):
         The simulator to display.
     """
 
-    def __init__(self, sim):
-        self.pre = '//window\n'
-        super().__init__(sim, offscreen=False)
+    def __init__(self, sim, offscreen):
+        super().__init__(sim, offscreen=offscreen)
 
         self._gui_lock = Lock()
         self._button_left_pressed = False
@@ -41,9 +40,6 @@ class MjViewerBasic(cymj.MjRenderContext):
             self.window, self._mouse_button_callback)
         glfw.set_scroll_callback(self.window, self._scroll_callback)
         glfw.set_key_callback(self.window, self.key_callback)
-
-    def render_offscreen(self, dimensions=None, camera_id=None):
-        cymj.MjRenderContext.render(self, dimensions, camera_id, visible=False)
 
 
     def render(self, dimensions=None, camera_id=None, offscreen=False):
@@ -138,8 +134,8 @@ class MjViewer(MjViewerBasic):
         The simulator to display.
     """
 
-    def __init__(self, sim):
-        super().__init__(sim)
+    def __init__(self, sim, offscreen=False):
+        super().__init__(sim, offscreen=offscreen)
 
         self._ncam = sim.model.ncam
         self._paused = False  # is viewer paused.
