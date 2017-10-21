@@ -134,6 +134,7 @@ class OffscreenOpenGLContext():
     def __init__(self, device_id):
         self.device_id = device_id
         res = initOpenGL(device_id)
+        self.window = None
         if res != 1:
             raise RuntimeError("Failed to initialize OpenGL")
 
