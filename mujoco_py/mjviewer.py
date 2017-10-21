@@ -32,7 +32,7 @@ class MjViewerBasic(cymj.MjRenderContext):
         self._last_mouse_y = 0
 
         if not offscreen:
-            framebuffer_width, _ = glfw.get_buffer_size()
+            framebuffer_width, _ = glfw.get_framebuffer_size(self.window)
             window_width, _ = glfw.get_window_size(self.window)
             self._scale = framebuffer_width * 1.0 / window_width
 
