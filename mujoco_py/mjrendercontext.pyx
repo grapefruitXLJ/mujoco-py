@@ -145,10 +145,10 @@ cdef class MjRenderContext(object):
             mjr_freeContext(&self._con)
             self._set_mujoco_buffers()
 
-    def render(self, dimensions=None, camera_id=None, visible=True):
-        if dimensions is None:
-            dimensions = self.opengl_context.get_buffer_size()
-        height, width = dimensions
+    def render(self, height=None, width=None, camera_id=None, visible=True):
+        if None in (height, width):
+            assert height is None and width is None
+            height, width = self.opengl_context.get_buffer_size()
         print('mjrRect render_rect;')
         cdef mjrRect rect
         rect.left = 0
@@ -165,8 +165,8 @@ cdef class MjRenderContext(object):
             self.update_offscreen_size(new_width, new_height)
 
         with self._camera(camera_id):
-            if visible:
-                self.opengl_context.set_buffer_size(width, height)
+            # if visible:
+                # self.opengl_context.set_buffer_size(width, height)
 
             print('mjv_updateScene(model, d, &opt, &pert, &cam, mjCAT_ALL, &scn);')
             mjv_updateScene(self._model_ptr, self._data_ptr, &self._vopt,
@@ -175,7 +175,14 @@ cdef class MjRenderContext(object):
             for marker_params in self._markers:
                 self._add_marker_to_scene(marker_params)
 
-            print('mjr_render(rect, &scn, &con);')
+            if self.offscreen:
+                if self._con.currentBuffer != mjFB_OFFSCREEN:
+                    raise RuntimeError('Offscreen rendering not supported')
+            else:
+                if self._con.currentBuffer != mjFB_WINDOW:
+                    raise RuntimeError('Window rendering not supported')
+
+            print('mjr_render(render_rect, &scn, &con);')
             mjr_render(rect, &self._scn, &self._con)
             for gridpos, (text1, text2) in self._overlay.items():
                 mjr_overlay(const.FONTSCALE_150, gridpos, rect, text1.encode(), text2.encode(), &self._con)
@@ -194,7 +201,7 @@ cdef class MjRenderContext(object):
         depth_arr = np.zeros(rect.width * rect.height, dtype=np.float32)
         cdef unsigned char[::view.contiguous] rgb_view = rgb_arr
         cdef float[::view.contiguous] depth_view = depth_arr
-        print('mjr_readPixels(rgb, NULL, rect, &con);')
+        print('mjr_readPixels(rgb, NULL, read_pixels_rect, &con);')
         mjr_readPixels(&rgb_view[0], &depth_view[0], rect, &self._con)
         rgb_img = rgb_arr.reshape(rect.height, rect.width, 3)
         if depth:

@@ -106,7 +106,7 @@ class GlfwContext(OpenGLContext):
         return window
 
     def get_buffer_size(self):
-        print("= glfwGetFramebufferSize(window);")
+        print("glfwGetFramebufferSize(window);")
         return glfw.get_framebuffer_size(self.window)
 
     def _set_window_size(self, target_width, target_height):
