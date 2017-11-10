@@ -124,7 +124,6 @@ def load_model_from_path(str path):
         if (path.endswith(".mjb")):
             model = mj_loadModel(path.encode(), NULL)
         elif (path.endswith(".xml")):
-            print('model = mj_loadXML("{}", NULL, errstr, 300);'.format(path))
             model = mj_loadXML(path.encode(), NULL, errstr, 300)
         else:
             raise RuntimeError("Unrecognized extension for %s. Expected .xml or .mjb" % path)

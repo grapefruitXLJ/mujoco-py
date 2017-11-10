@@ -59,7 +59,6 @@ class MjViewerBasic(cymj.MjRenderContext):
             super().render(dimensions=dimensions, camera_id=camera_id)
 
         if not offscreen:
-            print(self.pre + 'glfwSwapBuffers(window);')
             glfw.swap_buffers(self.window)
             glfw.poll_events()
 
