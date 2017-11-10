@@ -149,8 +149,7 @@ class OffscreenOpenGLContext():
         makeOpenGLContextCurrent(self.device_id)
 
     def set_buffer_size(self, int width, int height):
-        print('setOpenGLBufferSize({}, {}, {})'.format(self.device_id, width,
-            height))
+        print('setOpenGLBufferSize({}, {}, {})'.format(self.device_id, width, height))
         res = setOpenGLBufferSize(self.device_id, width, height)
         if res != 1:
             raise RuntimeError("Failed to set buffer size")

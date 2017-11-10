@@ -131,6 +131,7 @@ cdef class MjSim(object):
                 else:
                     render_context = self._render_context_offscreen
 
+                print('// from within mjsim.render: render_context.render, mode = ', mode)
                 render_context.render(
                     dimensions=(height, width), camera_id=camera_id)
                 return render_context.read_pixels(
@@ -142,6 +143,7 @@ cdef class MjSim(object):
             else:
                 render_context = self._render_context_window
 
+            print('// from within mjsim.render: render_context.render, mode = ', mode)
             render_context.render()
 
         else:

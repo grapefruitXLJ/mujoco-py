@@ -71,6 +71,7 @@ cdef class MjRenderContext(object):
         self._set_mujoco_buffers()
 
     def _set_camera(self, id, type):
+        print('// _set_camera')
         print('cam.fixedcamid = {};'.format(id))
         self.cam.fixedcamid = id
         print('cam.type = {};'.format(type))
@@ -136,6 +137,7 @@ cdef class MjRenderContext(object):
             self._set_mujoco_buffers()
 
     def render(self, dimensions=None, camera_id=None, visible=True):
+        print('// RenderContext.render... offscreen =', self.offscreen)
         if dimensions is None:
             dimensions = self.opengl_context.get_buffer_size()
         height, width = dimensions
