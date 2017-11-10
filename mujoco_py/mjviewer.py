@@ -53,13 +53,10 @@ class MjViewerBasic(cymj.MjRenderContext):
                 return
             elif glfw.window_should_close(self.window):
                 exit(0)
+            self.opengl_context.make_context_current()
 
         with self._gui_lock:
-            if dimensions is None:
-                height, width = None, None
-            else:
-                height, width = dimensions
-            super().render(height, width, camera_id=camera_id)
+            super().render(dimensions=dimensions, camera_id=camera_id)
 
         if not offscreen:
             print(self.pre + 'glfwSwapBuffers(window);')

@@ -133,6 +133,7 @@ class OffscreenOpenGLContext():
 
     def __init__(self, device_id):
         self.device_id = device_id
+        print('initOpenGL({})'.format(device_id))
         res = initOpenGL(device_id)
         self.window = None
         if res != 1:
@@ -140,12 +141,16 @@ class OffscreenOpenGLContext():
 
     def close(self):
         # TODO: properly close OpenGL in our contexts
+        print('closeOpenGL()')
         closeOpenGL()
 
     def make_context_current(self):
+        print('makeOpenGLContextCurrent({})'.format(self.device_id))
         makeOpenGLContextCurrent(self.device_id)
 
     def set_buffer_size(self, int width, int height):
+        print('setOpenGLBufferSize({}, {}, {})'.format(self.device_id, width,
+            height))
         res = setOpenGLBufferSize(self.device_id, width, height)
         if res != 1:
             raise RuntimeError("Failed to set buffer size")
