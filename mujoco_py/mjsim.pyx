@@ -132,7 +132,7 @@ cdef class MjSim(object):
                     render_context = self._render_context_offscreen
 
                 render_context.render(
-                    width=width, height=height, camera_id=camera_id)
+                    dimensions=(height, width), camera_id=camera_id)
                 return render_context.read_pixels(
                     width, height, depth=depth)
         elif mode == 'window':
