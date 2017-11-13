@@ -105,7 +105,6 @@ cdef class MjRenderContext(object):
         self.sim = new_sim
 
     def _set_mujoco_buffers(self):
-        self.pre = "//offscreen\n" if self.offscreen else "//window\n"
         print('mjr_makeContext(m, &con, mjFONTSCALE_150);')
         mjr_makeContext(self._model_ptr, &self._con, mjFONTSCALE_150)
         self.con = WrapMjrContext(&self._con)
@@ -119,7 +118,7 @@ cdef class MjRenderContext(object):
                     device_id = int(os.environ["GPUS"].split(',')[0])
                 else:
                     device_id = int(os.getenv('CUDA_VISIBLE_DEVICES', '0').split(',')[0])
-            self.opengl_context = OffscreenOpenGLContext(device_id)
+            self.opengl-context = OffscreenOpenGLContext(device_id)
 
     def _init_camera(self, sim):
         # Make the free camera look at the scene
@@ -295,5 +294,4 @@ cdef class MjRenderContext(object):
 class MjRenderContextOffscreen(MjRenderContext):
 
     def __cinit__(self, MjSim sim, int device_id):
-        self.pre = '//offscreen\n'
         super().__init__(sim, offscreen=True, device_id=device_id)
