@@ -184,8 +184,7 @@ class MjViewer(MjViewerBasic):
                 for k, v in self._user_overlay.items():
                     self._overlay[k] = copy.deepcopy(v)
                 self._create_full_overlay()
-
-            super().render(dimensions=dimensions, camera_id=camera_id)
+            super().render()
             if self._record_video:
                 frame = self._read_pixels_as_in_window()
                 self._video_queue.put(frame)

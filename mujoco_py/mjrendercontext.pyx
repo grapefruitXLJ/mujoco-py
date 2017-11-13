@@ -155,6 +155,18 @@ cdef class MjRenderContext(object):
         rect.height = height
         print('render_rect.height = {};'.format(height))
 
+        if self.sim.render_callback is not None:
+            self.sim.render_callback(self.sim, self)
+
+        if self.offscreen:
+            mjr_setBuffer(mjFB_OFFSCREEN, &self._con);
+            if self._con.currentBuffer != mjFB_OFFSCREEN:
+                raise RuntimeError('Offscreen rendering not supported')
+        else:
+            mjr_setBuffer(mjFB_WINDOW, &self._con);
+            if self._con.currentBuffer != mjFB_WINDOW:
+                raise RuntimeError('Window rendering not supported')
+
         # Sometimes buffers are too small.
         if width > self._con.offWidth or height > self._con.offHeight:
             new_width = max(width, self._model_ptr.vis.global_.offwidth)
