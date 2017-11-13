@@ -114,14 +114,14 @@ class GlfwContext(OpenGLContext):
         if target_width != self._width or target_height != self._height:
             self._width = target_width
             self._height = target_height
-            print('glfwSetWindowSize(window, {}, {})'.format(target_width, target_height))
+            print('glfwSetWindowSize(window, {}, {});'.format(target_width, target_height))
             glfw.set_window_size(self.window, target_width, target_height)
 
             # HAX: When running on a Mac with retina screen, the size
             # sometimes doubles
             width, height = glfw.get_framebuffer_size(self.window)
             if target_width != width:
-                print('glfwSetWindowSize(window, {} // 2, {} // 2)'.format(target_width, target_height))
+                print('glfwSetWindowSize(window, {} // 2, {} // 2);'.format(target_width, target_height))
                 glfw.set_window_size(self.window, target_width // 2, target_height // 2)
 
     @staticmethod
@@ -133,7 +133,7 @@ class OffscreenOpenGLContext():
 
     def __init__(self, device_id):
         self.device_id = device_id
-        print('initOpenGL({})'.format(device_id))
+        print('initOpenGL({});'.format(device_id))
         res = initOpenGL(device_id)
         self.window = None
         if res != 1:
@@ -141,15 +141,15 @@ class OffscreenOpenGLContext():
 
     def close(self):
         # TODO: properly close OpenGL in our contexts
-        print('closeOpenGL()')
+        print('closeOpenGL();')
         closeOpenGL()
 
     def make_context_current(self):
-        print('makeOpenGLContextCurrent({})'.format(self.device_id))
+        print('makeOpenGLContextCurrent({});'.format(self.device_id))
         makeOpenGLContextCurrent(self.device_id)
 
     def set_buffer_size(self, int width, int height):
-        print('setOpenGLBufferSize({}, {}, {})'.format(self.device_id, width, height))
+        print('setOpenGLBufferSize({}, {}, {});'.format(self.device_id, width, height))
         res = setOpenGLBufferSize(self.device_id, width, height)
         if res != 1:
             raise RuntimeError("Failed to set buffer size")

@@ -33,6 +33,12 @@ cdef class MjRenderContext(object):
     cdef public object sim
 
     def __cinit__(self):
+        print('mjData* d = 0;')
+        print('mjvScene scn;')
+        print('mjvCamera cam;')
+        print('mjvOption opt;')
+        print('mjvPerturb pert;')
+        print('mjrContext con;')
         maxgeom = 1000
         print('mjv_makeScene(&scn, {});'.format(maxgeom))
         mjv_makeScene(&self._scn, maxgeom)
@@ -118,7 +124,7 @@ cdef class MjRenderContext(object):
                     device_id = int(os.environ["GPUS"].split(',')[0])
                 else:
                     device_id = int(os.getenv('CUDA_VISIBLE_DEVICES', '0').split(',')[0])
-            self.opengl-context = OffscreenOpenGLContext(device_id)
+            self.opengl_context = OffscreenOpenGLContext(device_id)
 
     def _init_camera(self, sim):
         # Make the free camera look at the scene
@@ -160,14 +166,17 @@ cdef class MjRenderContext(object):
                 self.opengl_context.set_buffer_size(width, height)
 
             if self.offscreen:
+                print('mjr_setBuffer(mjFB_OFFSCREEN, &con);')
                 mjr_setBuffer(mjFB_OFFSCREEN, &self._con);
                 if self._con.currentBuffer != mjFB_OFFSCREEN:
                     raise RuntimeError('Offscreen rendering not supported')
             else:
+                print('mjr_setBuffer(mjFB_WINDOW, &con);')
                 mjr_setBuffer(mjFB_WINDOW, &self._con);
                 if self._con.currentBuffer != mjFB_WINDOW:
                     raise RuntimeError('Window rendering not supported')
 
+            print('mjv_updateScene(m, d, &opt, NULL, &cam, mjCAT_ALL, &scn);')
             mjv_updateScene(self._model_ptr, self._data_ptr, &self._vopt,
                             &self._pert, &self._cam, mjCAT_ALL, &self._scn)
 

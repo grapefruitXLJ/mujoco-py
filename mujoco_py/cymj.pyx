@@ -125,10 +125,10 @@ def load_model_from_path(str path):
     cdef mjModel *model
     with wrap_mujoco_warning():
         if (path.endswith(".mjb")):
-            print('mj_loadModel("{}", NULL);'.format(path))
+            print('m = mj_loadModel("{}", NULL);'.format(path))
             model = mj_loadModel(path.encode(), NULL)
         elif (path.endswith(".xml")):
-            print('mj_loadXML("{}", NULL, errstr, 300);'.format(path))
+            print('m = mj_loadXML("{}", NULL, errstr, 300);'.format(path))
             model = mj_loadXML(path.encode(), NULL, errstr, 300)
         else:
             raise RuntimeError("Unrecognized extension for %s. Expected .xml or .mjb" % path)
@@ -148,7 +148,7 @@ def load_model_from_xml(str xml_str):
         with tempfile.NamedTemporaryFile(suffix=".xml", delete=False) as fp:
             fp.write(xml_str.encode())
             fp.flush()
-        print('mj_loadXML("{}", NULL, errstr, 300);'.format(path))
+        print('m = mj_loadXML("{}", NULL, errstr, 300);'.format(fp.name))
         model = mj_loadXML(fp.name.encode(), NULL, errstr, 300)
     if model == NULL:
         raise Exception('%s\nFailed to load XML from file: %s. mj_loadXML error: %s' % (xml_str, fp.name, errstr,))
