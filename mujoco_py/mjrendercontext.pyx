@@ -106,7 +106,7 @@ cdef class MjRenderContext(object):
 
     def _set_mujoco_buffers(self):
         self.pre = "//offscreen\n" if self.offscreen else "//window\n"
-        print('mjr_makeContext(model, &con, mjFONTSCALE_150);')
+        print('mjr_makeContext(m, &con, mjFONTSCALE_150);')
         mjr_makeContext(self._model_ptr, &self._con, mjFONTSCALE_150)
         self.con = WrapMjrContext(&self._con)
 

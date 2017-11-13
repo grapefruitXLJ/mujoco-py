@@ -97,7 +97,7 @@ class GlfwContext(OpenGLContext):
 
         self._width = init_width
         self._height = init_height
-        print('glfwCreateWindow({}, {}, "mujoco_py", NULL, NULL);'.format(self._width, self._height))
+        print('GLFWwindow* window = glfwCreateWindow({}, {}, "mujoco_py", NULL, NULL);'.format(self._width, self._height))
         window = glfw.create_window(self._width, self._height, "mujoco_py", None, None)
 
         if not window:
