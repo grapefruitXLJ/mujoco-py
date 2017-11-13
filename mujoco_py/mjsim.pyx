@@ -119,7 +119,7 @@ cdef class MjSim(object):
 
         with wrap_mujoco_warning():
             for _ in range(self.nsubsteps):
-		self.substep_callback()
+                self.substep_callback()
                 print('mj_step(m, d);')
                 mj_step(self.model.ptr, self.data.ptr)
 
