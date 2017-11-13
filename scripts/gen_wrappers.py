@@ -418,6 +418,7 @@ def main():
         'mjdata.h',
         'mjvisualize.h',
         'mjrender.h',
+        'glfw3.h',
     ]
     if len(sys.argv) > 1:
         OUTPUT = sys.argv[1]

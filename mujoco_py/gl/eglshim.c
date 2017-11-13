@@ -54,7 +54,7 @@ int initOpenGL(int device_id)
         eglGetProcAddress("eglQueryDevicesEXT");
 
     eglQueryDevicesEXT(MAX_DEVICES, eglDevs, &numDevices);
-    printf("Found %d GPUs for rendering. Using device %d.\n", numDevices, device_id);
+    printf("//Found %d GPUs for rendering. Using device %d.\n", numDevices, device_id);
     if (device_id >= numDevices) {
         printf("Device id outside of range of available devices.\n");
         return -1;
@@ -117,7 +117,7 @@ int initOpenGL(int device_id)
     if( GLEW_OK != err ) {
         // MuJoCo does this automatically, but we need it if we want
         // to create e.g. PBOs before calling MuJoCo rendering functions.
-        fprintf("glewInit error: %s\n", glewGetErrorString(err));
+        printf("glewInit error: %s\n", glewGetErrorString(err));
         return -9;
     }
 

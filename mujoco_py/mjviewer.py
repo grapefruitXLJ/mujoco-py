@@ -10,7 +10,7 @@ import numpy as np
 import imageio
 
 
-class MjViewerBasic(cymj.MjRenderContextWindow):
+class MjViewerBasic(cymj.MjRenderContext):
     """
     A simple display GUI showing the scene of an :class:`.MjSim` with a mouse-movable camera.
 
@@ -22,8 +22,8 @@ class MjViewerBasic(cymj.MjRenderContextWindow):
         The simulator to display.
     """
 
-    def __init__(self, sim):
-        super().__init__(sim)
+    def __init__(self, sim, offscreen):
+        super().__init__(sim, offscreen=offscreen)
 
         self._gui_lock = Lock()
         self._button_left_pressed = False
@@ -31,30 +31,36 @@ class MjViewerBasic(cymj.MjRenderContextWindow):
         self._last_mouse_x = 0
         self._last_mouse_y = 0
 
-        framebuffer_width, _ = glfw.get_framebuffer_size(self.window)
-        window_width, _ = glfw.get_window_size(self.window)
-        self._scale = framebuffer_width * 1.0 / window_width
+        if not offscreen:
+            framebuffer_width, _ = glfw.get_framebuffer_size(self.window)
+            window_width, _ = glfw.get_window_size(self.window)
+            self._scale = framebuffer_width * 1.0 / window_width
 
-        glfw.set_cursor_pos_callback(self.window, self._cursor_pos_callback)
-        glfw.set_mouse_button_callback(
-            self.window, self._mouse_button_callback)
-        glfw.set_scroll_callback(self.window, self._scroll_callback)
-        glfw.set_key_callback(self.window, self.key_callback)
+            glfw.set_cursor_pos_callback(self.window, self._cursor_pos_callback)
+            glfw.set_mouse_button_callback(
+                self.window, self._mouse_button_callback)
+            glfw.set_scroll_callback(self.window, self._scroll_callback)
+            glfw.set_key_callback(self.window, self.key_callback)
 
-    def render(self):
+
+    def render(self, dimensions=None, camera_id=None, offscreen=False):
         """
         Render the current simulation state to the screen or off-screen buffer.
         Call this in your main loop.
         """
-        if self.window is None:
-            return
-        elif glfw.window_should_close(self.window):
-            exit(0)
+        if not offscreen:
+            if self.window is None:
+                return
+            elif glfw.window_should_close(self.window):
+                exit(0)
+            self.opengl_context.make_context_current()
 
         with self._gui_lock:
-            super().render()
+            super().render(dimensions=dimensions, camera_id=camera_id)
 
-        glfw.poll_events()
+        if not offscreen:
+            glfw.swap_buffers(self.window)
+            glfw.poll_events()
 
     def key_callback(self, window, key, scancode, action, mods):
         if action == glfw.RELEASE and key == glfw.KEY_ESCAPE:
@@ -129,8 +135,8 @@ class MjViewer(MjViewerBasic):
         The simulator to display.
     """
 
-    def __init__(self, sim):
-        super().__init__(sim)
+    def __init__(self, sim, offscreen=False):
+        super().__init__(sim, offscreen=offscreen)
 
         self._ncam = sim.model.ncam
         self._paused = False  # is viewer paused.
@@ -161,11 +167,14 @@ class MjViewer(MjViewerBasic):
         self._hide_overlay = False  # hide the entire overlay.
         self._user_overlay = {}
 
-    def render(self):
+    def render(self, dimensions=None, camera_id=None, offscreen=False):
         """
         Render the current simulation state to the screen or off-screen buffer.
         Call this in your main loop.
         """
+        if offscreen:
+            super().render(dimensions=dimensions, camera_id=camera_id, offscreen=offscreen)
+            return
 
         def render_inner_loop(self):
             render_start = time.time()
@@ -245,8 +254,8 @@ class MjViewer(MjViewerBasic):
                              self._run_speed, "[S]lower, [F]aster")
         self.add_overlay(
             const.GRID_TOPLEFT, "Ren[d]er every frame", "Off" if self._render_every_frame else "On")
-        self.add_overlay(const.GRID_TOPLEFT, "Switch camera (#cams = %d)" % (self._ncam + 1),
-                                             "[Tab] (camera ID = %d)" % self.cam.fixedcamid)
+        # self.add_overlay(const.GRID_TOPLEFT, "Switch camera (#cams = %d)" % (self._ncam + 1),
+                                             # "[Tab] (camera ID = %d)" % self.cam.fixedcamid)
         self.add_overlay(const.GRID_TOPLEFT, "[C]ontact forces", "Off" if self.vopt.flags[
                          10] == 1 else "On")
         self.add_overlay(

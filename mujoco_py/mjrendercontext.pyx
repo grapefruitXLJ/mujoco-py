@@ -1,5 +1,6 @@
 from threading import Lock
 from mujoco_py.generated import const
+from contextlib import contextmanager
 
 cdef class MjRenderContext(object):
     """
@@ -65,6 +66,26 @@ cdef class MjRenderContext(object):
         self._init_camera(sim)
         self._set_mujoco_buffers()
 
+    def _set_camera(self, id, type):
+        self.cam.fixedcamid = id
+        self.cam.type = type
+        mjv_updateCamera(self._model_ptr, self._data_ptr, &self._cam, &self._scn)
+
+    def _set_free_camera(self):
+        self._set_camera(-1, const.CAMERA_FREE)
+
+    @contextmanager
+    def _camera(self, id):
+        if id is None:
+            id = -1
+        assert type(id) is int
+        if id != -1:
+            self._set_camera(id, const.CAMERA_FIXED)
+
+        yield
+        self._set_free_camera()
+
+
     def update_sim(self, MjSim new_sim):
         if new_sim == self.sim:
             return
@@ -76,6 +97,7 @@ cdef class MjRenderContext(object):
         self.sim = new_sim
 
     def _set_mujoco_buffers(self):
+        self.pre = "//offscreen\n" if self.offscreen else "//window\n"
         mjr_makeContext(self._model_ptr, &self._con, mjFONTSCALE_150)
         self.con = WrapMjrContext(&self._con)
 
@@ -92,8 +114,7 @@ cdef class MjRenderContext(object):
 
     def _init_camera(self, sim):
         # Make the free camera look at the scene
-        self.cam.type = const.CAMERA_FREE
-        self.cam.fixedcamid = -1
+        self._set_free_camera()
         for i in range(3):
             self.cam.lookat[i] = sim.model.stat.center[i]
         self.cam.distance = sim.model.stat.extent
@@ -105,7 +126,10 @@ cdef class MjRenderContext(object):
             mjr_freeContext(&self._con)
             self._set_mujoco_buffers()
 
-    def render(self, width, height, camera_id=None):
+    def render(self, dimensions=None, camera_id=None, visible=True):
+        if dimensions is None:
+            dimensions = self.opengl_context.get_buffer_size()
+        height, width = dimensions
         cdef mjrRect rect
         rect.left = 0
         rect.bottom = 0
@@ -130,24 +154,19 @@ cdef class MjRenderContext(object):
             new_height = max(height, self._model_ptr.vis.global_.offheight)
             self.update_offscreen_size(new_width, new_height)
 
-        if camera_id is not None:
-            if camera_id == -1:
-                self.cam.type = const.CAMERA_FREE
-            else:
-                self.cam.type = const.CAMERA_FIXED
-            self.cam.fixedcamid = camera_id
+        with self._camera(camera_id):
+            if visible:
+                self.opengl_context.set_buffer_size(width, height)
 
-        self.opengl_context.set_buffer_size(width, height)
+            mjv_updateScene(self._model_ptr, self._data_ptr, &self._vopt,
+                            &self._pert, &self._cam, mjCAT_ALL, &self._scn)
 
-        mjv_updateScene(self._model_ptr, self._data_ptr, &self._vopt,
-                        &self._pert, &self._cam, mjCAT_ALL, &self._scn)
+            for marker_params in self._markers:
+                self._add_marker_to_scene(marker_params)
 
-        for marker_params in self._markers:
-            self._add_marker_to_scene(marker_params)
-
-        mjr_render(rect, &self._scn, &self._con)
-        for gridpos, (text1, text2) in self._overlay.items():
-            mjr_overlay(const.FONTSCALE_150, gridpos, rect, text1.encode(), text2.encode(), &self._con)
+            mjr_render(rect, &self._scn, &self._con)
+            for gridpos, (text1, text2) in self._overlay.items():
+                mjr_overlay(const.FONTSCALE_150, gridpos, rect, text1.encode(), text2.encode(), &self._con)
 
     def read_pixels(self, width, height, depth=True):
         cdef mjrRect rect
@@ -247,28 +266,13 @@ cdef class MjRenderContext(object):
         mjr_freeContext(&self._con)
         mjv_freeScene(&self._scn)
 
-
-class MjRenderContextOffscreen(MjRenderContext):
-
-    def __cinit__(self, MjSim sim, int device_id):
-        super().__init__(sim, offscreen=True, device_id=device_id)
-
-class MjRenderContextWindow(MjRenderContext):
-
-    def __init__(self, MjSim sim):
-        super().__init__(sim, offscreen=False)
-
-        assert isinstance(self.opengl_context, GlfwContext), (
-            "Only GlfwContext supported for windowed rendering")
-
     @property
     def window(self):
         return self.opengl_context.window
 
-    def render(self):
-        if self.window is None or glfw.window_should_close(self.window):
-            return
 
-        glfw.make_context_current(self.window)
-        super().render(*glfw.get_framebuffer_size(self.window))
-        glfw.swap_buffers(self.window)
+class MjRenderContextOffscreen(MjRenderContext):
+
+    def __cinit__(self, MjSim sim, int device_id):
+        self.pre = '//offscreen\n'
+        super().__init__(sim, offscreen=True, device_id=device_id)

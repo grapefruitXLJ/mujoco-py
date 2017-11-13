@@ -8,8 +8,7 @@ def _add_mujoco_bin_to_dyld_library_path():
     mujoco_path, _ = discover_mujoco()
     bin_path = os.path.join(mujoco_path, "bin")
     old_dyld_library_path = os.getenv("DYLD_LIBRARY_PATH", "")
-    os.environ["DYLD_LIBRARY_PATH"] = "{}:{}".format(
-        bin_path, old_dyld_library_path)
+    os.environ["DYLD_LIBRARY_PATH"] = "{}:{}".format(bin_path, old_dyld_library_path)
 
 
 try:
@@ -27,6 +26,10 @@ class OpenGLContext(metaclass=ABCMeta):
 
     @abstractmethod
     def set_buffer_size(self, width, height):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_buffer_size(self):
         raise NotImplementedError()
 
 
@@ -47,6 +50,7 @@ class GlfwContext(OpenGLContext):
         self._height = self._INIT_HEIGHT
         self.window = self._create_window(offscreen)
         self._set_window_size(self._width, self._height)
+        self.make_context_current()
 
     @staticmethod
     def _init_glfw():
@@ -75,12 +79,10 @@ class GlfwContext(OpenGLContext):
 
     def _create_window(self, offscreen):
         if offscreen:
-            print("Creating offscreen glfw")
             glfw.window_hint(glfw.VISIBLE, 0)
             glfw.window_hint(glfw.DOUBLEBUFFER, 0)
             init_width, init_height = self._INIT_WIDTH, self._INIT_HEIGHT
         else:
-            print("Creating window glfw")
             glfw.window_hint(glfw.SAMPLES, 4)
             glfw.window_hint(glfw.VISIBLE, 1)
             glfw.window_hint(glfw.DOUBLEBUFFER, 1)
@@ -90,8 +92,7 @@ class GlfwContext(OpenGLContext):
 
         self._width = init_width
         self._height = init_height
-        window = glfw.create_window(
-            self._width, self._height, "mujoco_py", None, None)
+        window = glfw.create_window(self._width, self._height, "mujoco_py", None, None)
 
         if not window:
             raise GlfwError("Failed to create GLFW window")
@@ -124,6 +125,7 @@ class OffscreenOpenGLContext():
     def __init__(self, device_id):
         self.device_id = device_id
         res = initOpenGL(device_id)
+        self.window = None
         if res != 1:
             raise RuntimeError("Failed to initialize OpenGL")
 

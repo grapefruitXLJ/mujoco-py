@@ -71,7 +71,7 @@ cdef class MjSim(object):
         self.nsubsteps = nsubsteps
         self.model = model
         if data is None:
-            with wrap_mujoco_warning():
+            with wrap_mujoco_warning(): 
                 _data = mj_makeData(self.model.ptr)
             if _data == NULL:
                 raise Exception('mj_makeData failed!')
@@ -147,13 +147,12 @@ cdef class MjSim(object):
         if mode == 'offscreen':
             with _MjSim_render_lock:
                 if self._render_context_offscreen is None:
-                    render_context = MjRenderContextOffscreen(
-                        self, device_id=device_id)
+                    render_context = MjRenderContextOffscreen(self, device_id=device_id)
                 else:
                     render_context = self._render_context_offscreen
 
                 render_context.render(
-                    width=width, height=height, camera_id=camera_id)
+                    dimensions=(height, width), camera_id=camera_id)
                 return render_context.read_pixels(
                     width, height, depth=depth)
         elif mode == 'window':
