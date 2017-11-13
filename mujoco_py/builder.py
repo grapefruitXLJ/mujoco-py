@@ -229,7 +229,7 @@ class LinuxCPUExtensionBuilder(MujocoExtensionBuilder):
 
         self.extension.sources.append(
             join(self.CYMJ_DIR_PATH, "gl", "osmesashim.c"))
-        self.extension.libraries.extend(['OSMesa', 'glewosmesa'])
+        self.extension.libraries.extend(['GL', 'glew', 'OSMesa'])
         self.extension.runtime_library_dirs = [join(mjpro_path, 'bin')]
 
 
